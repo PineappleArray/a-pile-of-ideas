@@ -3,12 +3,14 @@ class Data {
     centerY: number;
     height: number;
     width: number;
+    id: number;
 
     constructor(centerX: number, centerY: number, id: number, height: number, width: number) {
         this.centerX = centerX;
         this.centerY = centerY;
         this.height = height;
         this.width = width;
+        this.id = id;
     }
 
     move(x: number, y: number): void {

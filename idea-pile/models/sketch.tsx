@@ -1,11 +1,10 @@
 import Data from "./data";
 
 class Sketch extends Data {
-    id: string | number;
     data: any[][];
 
-    constructor(height: number, width: number, dataArray: any[][], id: string | number) {
-        super(0, 0, height, width); // Call parent constructor with default centerX and centerY
+    constructor(height: number, width: number, id: number, dataArray: any[][]) {
+        super(0, 0, id, height, width); // Call parent constructor with default centerX and centerY
         this.id = id;
         this.data = new Array(height);
         

@@ -2,7 +2,7 @@
 import { PenTool, FileText, Users, Lightbulb } from 'lucide-react';
 import ToolBar from './toolbar';
 import React from 'react';
-import ToolClass from './api/whiteboards/tools/tools';
+import ToolClass from './tools/tools';
 import { text } from '../models/text'
 export default function WhiteboardPage() {
     const symbols = [
@@ -54,9 +54,9 @@ export default function WhiteboardPage() {
             
   {textFields.map((t) => {
     console.log("Rendering text field:", {
-    id: t.getId(),
-    x: t.x,
-    y: t.y,
+    id: t.id,
+    x: t.centerX,
+    y: t.centerY,
     fontSize: t.fontSize,
     width: t.box_width,
     height: t.box_height,
@@ -64,11 +64,11 @@ export default function WhiteboardPage() {
 
   return (
     <div
-      key={t.getId()}
+      key={t.id}
       className="absolute"
       style={{
-        left: t.x,
-        top: t.y,
+        left: t.centerX,
+        top: t.centerY,
         fontSize: t.fontSize,
         color: t.color,
         textAlign: t.align,
@@ -76,7 +76,7 @@ export default function WhiteboardPage() {
         height: t.box_height,
       }}
     >
-      {t.content}
+      {t.text}
     </div>
   );
 })}
