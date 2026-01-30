@@ -170,15 +170,11 @@ enableClickToCreateDivs('#myContainer');
         </div>
       </div>
     </header>
-    {/*<div className="pt-16" onClick={() => (ClickCreateTextBox)}>SOMETHING__________________________</div>*/}
     <div id="myContainer" style={{ 
       display: 'flex', 
       flexDirection: 'column', 
       height: '100vh'
     }}></div>
-    {/*<div className="pt-16" 
-    onClick={() => { if (useTool) useTool(instanceTool); }} />
-    SOMETHING__________________________*/}
     </>
   );
 }
