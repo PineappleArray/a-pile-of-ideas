@@ -49,38 +49,8 @@ export default function WhiteboardPage() {
     handleToolAction(x, y, e);
   };
 
-    return(
-      <div onClick={handleClick}>
-            
-  {textFields.map((t) => {
-    console.log("Rendering text field:", {
-    id: t.id,
-    x: t.centerX,
-    y: t.centerY,
-    fontSize: t.fontSize,
-    width: t.box_width,
-    height: t.box_height,
-  });
-
-  return (
-    <div
-      key={t.id}
-      className="absolute"
-      style={{
-        left: t.centerX,
-        top: t.centerY,
-        fontSize: t.fontSize,
-        color: t.color,
-        textAlign: t.align,
-        width: t.box_width,
-        height: t.box_height,
-      }}
-    >
-      {t.text}
-    </div>
-  );
-})}
-
+  return(
+    <div onClick={handleClick}>
             
 <ToolBar
   onToolChange={(t: string) => {

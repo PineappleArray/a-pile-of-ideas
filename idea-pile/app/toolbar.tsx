@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Tool from './tools/tools'; // Assuming Tool type is defined elsewhere in your project
 import Pen from './tools/penTool'; // Assuming Pen type is defined elsewhere in your project
 import PenTool from './tools/penTool';
-import ClickCreateTextBox from './tools/textbox';
+import onCanvasClick from './tools/textbox';
 
 // TopBar.jsx
 // Tailwind-ready React component. Default-exported so you can drop it into a Next.js / Create React App project.
@@ -15,12 +15,6 @@ type ToolBarProps = {
 };
 const instanceTool = new PenTool(16, 'Blue');
 
-type Box = {
-  id: number;
-  x: number;
-  y: number;
-  text: string;
-};
 
 export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: ToolBarProps) {
   const [active, setActive] = useState('select');
@@ -36,6 +30,53 @@ export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: Too
     setFontSize(newSize);
     if (onFontSizeChange) onFontSizeChange(newSize);
   }
+
+
+  function enableClickToCreateDivs(containerSelector: string): void {
+  const container: HTMLElement | null = document.querySelector(containerSelector);
+  
+  if (!container) {
+    console.error('Container not found');
+    return;
+  }
+  
+  // Make sure the container has position relative for absolute positioning to work
+  if (getComputedStyle(container).position === 'static') {
+    container.style.position = 'relative';
+  }
+  
+  container.addEventListener('click', function(event: MouseEvent): void {
+    // Only create a div if clicking directly on the container, not its children
+    if (event.target !== container) {
+      return;
+    }
+    
+    // Create a new div
+    const newArea: HTMLTextAreaElement = document.createElement('textarea');
+    
+    // Style it as a black square
+    newArea.style.width = '100px';
+    newArea.style.height = '80px';
+    newArea.style.backgroundColor = 'white';
+    newArea.style.position = 'absolute';
+    newArea.style.resize = 'none';
+    newArea.style.border = '2px solid black';
+    newArea.style.overflowY = "hidden";
+
+    // Position it at the click coordinates (centered on click point)
+    const rect: DOMRect = container.getBoundingClientRect();
+    newArea.style.left = (event.clientX - rect.left - 10) + 'px';
+    newArea.style.top = (event.clientY - rect.top - 10) + 'px';
+    
+    // Add it to the container
+    container.appendChild(newArea);
+    newArea.focus();
+  });
+}
+
+// Usage:
+enableClickToCreateDivs('#myContainer');
+
 
   const btnBase = 'inline-flex items-center gap-2 px-3 py-2 rounded-2xl text-sm font-medium transition-shadow focus:outline-none focus:ring-2 focus:ring-offset-2';
 
@@ -129,7 +170,12 @@ export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: Too
         </div>
       </div>
     </header>
-    <div className="pt-16" onClick={() => (ClickCreateTextBox)}>SOMETHING__________________________</div>
+    {/*<div className="pt-16" onClick={() => (ClickCreateTextBox)}>SOMETHING__________________________</div>*/}
+    <div id="myContainer" style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100vh'
+    }}></div>
     {/*<div className="pt-16" 
     onClick={() => { if (useTool) useTool(instanceTool); }} />
     SOMETHING__________________________*/}

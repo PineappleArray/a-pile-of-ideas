@@ -35,4 +35,4 @@ export class text extends Data {
     }
 }
 
-export default Text;
+export default text;
