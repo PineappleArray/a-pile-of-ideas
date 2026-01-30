@@ -59,7 +59,7 @@ export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: Too
     newArea.style.height = '80px';
     newArea.style.backgroundColor = 'white';
     newArea.style.position = 'absolute';
-    newArea.style.resize = 'none';
+    newArea.style.resize = 'both';
     newArea.style.border = '2px solid black';
     newArea.style.overflowY = "hidden";
 
@@ -75,7 +75,9 @@ export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: Too
 }
 
 // Usage:
-enableClickToCreateDivs('#myContainer');
+document.addEventListener('DOMContentLoaded', function() {
+  enableClickToCreateDivs('#myContainer');
+});
 
 
   const btnBase = 'inline-flex items-center gap-2 px-3 py-2 rounded-2xl text-sm font-medium transition-shadow focus:outline-none focus:ring-2 focus:ring-offset-2';
