@@ -15,6 +15,13 @@ type ToolBarProps = {
 };
 const instanceTool = new PenTool(16, 'Blue');
 
+type Box = {
+  id: number;
+  x: number;
+  y: number;
+  text: string;
+};
+
 export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: ToolBarProps) {
   const [active, setActive] = useState('select');
   const [fontSize, setFontSize] = useState(16);

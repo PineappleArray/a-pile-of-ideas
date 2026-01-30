@@ -1,3 +1,4 @@
+//One use js files to help init the databases NOT type safe
 import sqlite3 from "sqlite3";
 import bcrypt from "bcrypt"
 import mongoose from "mongoose";
