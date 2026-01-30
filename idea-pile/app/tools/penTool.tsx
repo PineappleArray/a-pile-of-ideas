@@ -20,9 +20,6 @@ interface Path {
 
 // Pen tool implementation without React hooks (class-based state)
 class PenTool extends Tool {
-  size: number;
-  color: string;
-  data: any; // Replace 'any' with your actual data type
   strokes: any[]; // Replace 'any' with your actual stroke type
   currentStroke: any | null; // Replace 'any' with your actual stroke type
 
