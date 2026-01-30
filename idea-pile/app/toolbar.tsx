@@ -1,7 +1,9 @@
 "use client";
 import React, { useState } from 'react';
-import Tool from './api/whiteboards/tools/tools'; // Assuming Tool type is defined elsewhere in your project
-import Pen from './api/whiteboards/tools/penTool'; // Assuming Pen type is defined elsewhere in your project
+import Tool from './tools/tools'; // Assuming Tool type is defined elsewhere in your project
+import Pen from './tools/penTool'; // Assuming Pen type is defined elsewhere in your project
+import {run} from '../backend/db-api'
+import PenTool from './tools/penTool';
 
 // TopBar.jsx
 // Tailwind-ready React component. Default-exported so you can drop it into a Next.js / Create React App project.
@@ -11,7 +13,7 @@ type ToolBarProps = {
   onFontSizeChange?: (size: number) => void;
   useTool?: (tool: Tool) => void;
 };
-const instanceTool = new Pen(16, 'Blue', 16, 'Blue');
+const instanceTool = new PenTool(16, 'Blue');
 
 export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: ToolBarProps) {
   const [active, setActive] = useState('select');
@@ -28,6 +30,10 @@ export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: Too
     if (onFontSizeChange) onFontSizeChange(newSize);
   }
   
+  function test(){
+    run()
+  }
+
   const btnBase = 'inline-flex items-center gap-2 px-3 py-2 rounded-2xl text-sm font-medium transition-shadow focus:outline-none focus:ring-2 focus:ring-offset-2';
 
   return (
@@ -120,9 +126,10 @@ export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: Too
         </div>
       </div>
     </header>
-    <div className="pt-16" 
+    <div onClick={() => (test)}></div>
+    {/*<div className="pt-16" 
     onClick={() => { if (useTool) useTool(instanceTool); }} />
-    SOMETHING__________________________
+    SOMETHING__________________________*/}
     </>
   );
 }
