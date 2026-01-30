@@ -37,7 +37,7 @@ export default function WhiteboardPage() {
       return;
     }
 
-    // default: just record coords
+    
     console.log('Board click at', x, y);
   }
 
