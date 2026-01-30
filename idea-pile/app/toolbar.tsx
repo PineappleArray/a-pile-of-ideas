@@ -31,7 +31,6 @@ export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: Too
     if (onFontSizeChange) onFontSizeChange(newSize);
   }
 
-
   function enableClickToCreateDivs(containerSelector: string): void {
   const container: HTMLElement | null = document.querySelector(containerSelector);
   
