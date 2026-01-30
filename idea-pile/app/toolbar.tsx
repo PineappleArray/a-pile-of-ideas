@@ -126,7 +126,6 @@ enableClickToCreateDivs('#myContainer');
               <span className="hidden sm:inline">Text</span>
             </button>
 
-            {/* Make Text Size - alternative small button (optional) */}
 
             {/* Draw (Pen) */}
             <button
