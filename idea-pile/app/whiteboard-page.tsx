@@ -33,7 +33,7 @@ export default function WhiteboardPage() {
 
     if (tool === 'eraser' || tool === 'eraser'){
       console.log('Eraser at', x, y);
-      // TODO: perform erase at x,y
+      
       return;
     }
 
