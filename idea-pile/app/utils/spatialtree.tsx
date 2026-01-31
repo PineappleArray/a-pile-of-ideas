@@ -1,11 +1,15 @@
 import RBush from 'rbush';
 
 export interface BoxItem {
-  leftCornerX: number;
-  leftCornerY: number;
-  texts: Text;
+  maxX: number;
+  maxY: number;
+  minX: number;
+  minY: number;
   id: string;
 }
+
+const marginX = 10;
+const marginY = 10;
 
 export class SpatialTree {
   private tree: RBush<BoxItem>;
@@ -16,39 +20,60 @@ export class SpatialTree {
 
   // Insert a box into the tree 
   //x,y is the position of the upper left corner 
-  insert(x: number, y: number, width: number, height: number, text: Text): BoxItem {
+  insert(maxX: number, maxY: number, minX: number, minY: number): BoxItem {
     const item: BoxItem = {
-      leftCornerX: x,
-      leftCornerY: y,
-      texts : text,
+      maxX: maxX,
+      maxY: maxY,
+      minX : minX,
+      minY : minY,
       id: Math.random().toString(36)
     };
-    if (this.hasOverlap(x,y,10,10)!)
+    if (this.hasOverlap(maxX,maxY,minX,minY)!)
       this.tree.insert(item);
     return item;
   }
 
+  overlapPercent(boxA: BoxItem, boxB: BoxItem): number {
+    return Math.max(0, Math.min(boxA.maxX, boxB.maxX) - Math.max(boxA.minX, boxB.minX)) * Math.max(0, Math.min(boxA.maxY, boxB.maxY) - Math.max(boxA.minY, boxB.minY));
+   }
+
+
+
   // Check if a box would overlap with existing boxes
-  hasOverlap(x: number, y: number, width: number, height: number): boolean {
+  hasOverlap(maxX: number, maxY: number, minX: number, minY: number): boolean {
     const results = this.tree.search({
-      minX: x,
-      minY: y,
-      maxX: x + width,
-      maxY: y + height
+      minX: minX,
+      minY: minY,
+      maxX: maxX,
+      maxY: maxY
     });
     
     return results.length > 0;
   }
 
-  // Get all overlapping boxes
-  checkOverlapping(x: number, y: number, width: number, height: number): BoxItem[] {
-    return this.tree.search({
-      minX: x,
-      minY: y,
-      maxX: x + width,
-      maxY: y + height
-    });
+
+  canInsert(
+  tree: RBush<BoxItem>,
+  toAdd: BoxItem
+): boolean {
+  // 1. Narrow down candidates
+  const candidates = tree.search(toAdd);
+
+  // 2. Exact geometry checks
+  for (const inTree of candidates) {
+    // Any overlap
+    if (this.overlapPercent(inTree, toAdd) > 0) {
+      return false;
+    }
+
+    // New box fully inside existing
+    if (toAdd.minX >= inTree.minX && toAdd.maxX <= inTree.minX && toAdd.minY >= inTree.minY && toAdd.maxY <= inTree.maxY) {
+      return false;
+    }
   }
+
+  return true;
+}
 
   // Remove a box from the tree
   remove(item: BoxItem): void {
