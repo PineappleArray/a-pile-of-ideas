@@ -1,8 +1,8 @@
 import RBush from 'rbush';
 
 export interface BoxItem {
-  minX: number;
-  minY: number;
+  leftCornerX: number;
+  leftCornerY: number;
   texts: Text;
   id: string;
 }
@@ -14,16 +14,17 @@ export class SpatialTree {
     this.tree = new RBush<BoxItem>();
   }
 
-  // Insert a box into the tree
+  // Insert a box into the tree 
+  //x,y is the position of the upper left corner 
   insert(x: number, y: number, width: number, height: number, text: Text): BoxItem {
     const item: BoxItem = {
-      minX: x,
-      minY: y,
+      leftCornerX: x,
+      leftCornerY: y,
       texts : text,
       id: Math.random().toString(36)
     };
-    
-    this.tree.insert(item);
+    if (this.hasOverlap(x,y,10,10)!)
+      this.tree.insert(item);
     return item;
   }
 
@@ -40,7 +41,7 @@ export class SpatialTree {
   }
 
   // Get all overlapping boxes
-  getOverlapping(x: number, y: number, width: number, height: number): BoxItem[] {
+  checkOverlapping(x: number, y: number, width: number, height: number): BoxItem[] {
     return this.tree.search({
       minX: x,
       minY: y,
