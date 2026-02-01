@@ -1,3 +1,9 @@
+This is a Next.js project that allows users to edit and save whiteboards in a manner similar to google docs. Along with that this project utilizes keyframes and flowers to enable version control allowing edits to be saved in realtime and for users to go back to previous versions of the document. This version control system was inspiried by Eric Sinks blog and mirrors version control systems seen in modern programs.
+
+Version Control:
+The flower and keyframe version that is used will store
+
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
