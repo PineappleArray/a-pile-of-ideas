@@ -4,6 +4,9 @@ import Tool from './tools/tools'; // Assuming Tool type is defined elsewhere in 
 import Pen from './tools/penTool'; // Assuming Pen type is defined elsewhere in your project
 import PenTool from './tools/penTool';
 import onCanvasClick from './tools/textbox';
+import { SpatialTree } from './utils/spatialtree';
+import { useEffect, useRef } from 'react';
+
 
 // TopBar.jsx
 // Tailwind-ready React component. Default-exported so you can drop it into a Next.js / Create React App project.
@@ -14,72 +17,97 @@ type ToolBarProps = {
   useTool?: (tool: Tool) => void;
 };
 const instanceTool = new PenTool(16, 'Blue');
-
+const tree = new SpatialTree()
 
 export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: ToolBarProps) {
   const [active, setActive] = useState('select');
   const [fontSize, setFontSize] = useState(16);
 
+  //This will change the tools that are selected
   function handleTool(tool: string) {
       setActive(tool);
       if (onToolChange) onToolChange(tool);
   }
 
+
+  //Changes the font when clicking on the font adjustment button
   function handleSizeChange(sym: string) {
     const newSize = sym == "+" ? fontSize + 1 : fontSize - 1;
     setFontSize(newSize);
     if (onFontSizeChange) onFontSizeChange(newSize);
   }
 
-  function enableClickToCreateDivs(containerSelector: string): void {
-  const container: HTMLElement | null = document.querySelector(containerSelector);
   
-  if (!container) {
-    console.error('Container not found');
-    return;
-  }
-  
-  // Make sure the container has position relative for absolute positioning to work
-  if (getComputedStyle(container).position === 'static') {
-    container.style.position = 'relative';
-  }
-  
-  container.addEventListener('click', function(event: MouseEvent): void {
-    // Only create a div if clicking directly on the container, not its children
-    if (event.target !== container) {
-      return;
-    }
-    
-    // Create a new div
-    const newArea: HTMLTextAreaElement = document.createElement('textarea');
-    
-    // Style it as a black square
-    newArea.style.width = '100px';
-    newArea.style.height = '80px';
-    newArea.style.backgroundColor = 'white';
-    newArea.style.position = 'absolute';
-    newArea.style.resize = 'both';
-    newArea.style.border = '2px solid black';
-    newArea.style.overflowY = "hidden";
-
-    // Position it at the click coordinates (centered on click point)
-    const rect: DOMRect = container.getBoundingClientRect();
-    newArea.style.left = (event.clientX - rect.left - 10) + 'px';
-    newArea.style.top = (event.clientY - rect.top - 10) + 'px';
-    
-    // Add it to the container
-    container.appendChild(newArea);
-    newArea.focus();
-  });
-}
-
-// Usage:
-document.addEventListener('DOMContentLoaded', function() {
-  enableClickToCreateDivs('#myContainer');
-});
-
-
   const btnBase = 'inline-flex items-center gap-2 px-3 py-2 rounded-2xl text-sm font-medium transition-shadow focus:outline-none focus:ring-2 focus:ring-offset-2';
+  const containerRef = useRef<HTMLDivElement>(null);
+  const treeRef = useRef<SpatialTree>(new SpatialTree());
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+
+      // Clicked on container background (create new textarea)
+      if (target === container) {
+        const rect: DOMRect = container.getBoundingClientRect();
+        const x = event.clientX - rect.left - 10;
+        const y = event.clientY - rect.top - 10;
+        const width = 100;
+        const height = 80;
+
+        // Check if we can insert (no overlap)
+        if (!treeRef.current.hasOverlap(x, y, width, height)) {
+          // Create a new textarea
+          const newArea: HTMLTextAreaElement = document.createElement('textarea');
+
+          // Style it
+          newArea.style.width = width + 'px';
+          newArea.style.height = height + 'px';
+          newArea.style.backgroundColor = 'white';
+          newArea.style.position = 'absolute';
+          newArea.style.resize = 'both';
+          newArea.style.border = '2px solid black';
+          newArea.style.overflowY = 'hidden';
+          newArea.id = `box-${Date.now()}`;
+
+          // Position it at the click coordinates
+          newArea.style.left = x + 'px';
+          newArea.style.top = y + 'px';
+
+          // Add it to the container
+          container.appendChild(newArea);
+          newArea.focus();
+
+          // Add to spatial tree
+          //treeRef.current.insert(x, y, width, height, newArea);
+        } else {
+          console.log('Cannot place textarea - overlaps with existing element');
+        }
+      }
+
+      // Clicked on a textarea (select it)
+      else if (target.id?.startsWith('box-')) {
+        console.log('Selected box:', target.id);
+        
+        // Reset all textareas to white
+        container.querySelectorAll('textarea').forEach(textarea => {
+          (textarea as HTMLTextAreaElement).style.backgroundColor = 'white';
+        });
+        
+        // Highlight selected one
+        target.style.backgroundColor = 'lightblue';
+      }
+    };
+
+    container.addEventListener('click', handleClick);
+
+    // Cleanup
+    return () => {
+      container.removeEventListener('click', handleClick);
+    };
+  }, []);
 
   return (
     <>
@@ -170,11 +198,28 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
     </header>
-    <div id="myContainer" style={{ 
+    <div ref={containerRef} style={{ 
       display: 'flex', 
       flexDirection: 'column', 
       height: '100vh'
     }}></div>
     </>
   );
+
+    <div
+      ref={containerRef}
+      style={{
+        width: '100%',
+        height: '600px',
+        border: '2px solid #ccc',
+        position: 'relative',
+        backgroundColor: '#f5f5f5'
+      }}
+    >
+      Click to create textareas
+    </div>
+  //);
+//}
+
+
 }

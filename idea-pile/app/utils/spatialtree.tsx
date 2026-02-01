@@ -8,9 +8,6 @@ export interface BoxItem {
   id: string;
 }
 
-const marginX = 10;
-const marginY = 10;
-
 export class SpatialTree {
   private tree: RBush<BoxItem>;
 
@@ -20,13 +17,13 @@ export class SpatialTree {
 
   // Insert a box into the tree 
   //x,y is the position of the upper left corner 
-  insert(maxX: number, maxY: number, minX: number, minY: number): BoxItem {
+  insert(maxX: number, maxY: number, minX: number, minY: number, id: string): BoxItem {
     const item: BoxItem = {
       maxX: maxX,
       maxY: maxY,
       minX : minX,
       minY : minY,
-      id: Math.random().toString(36)
+      id: id,//Math.random().toString(36)
     };
     if (this.hasOverlap(maxX,maxY,minX,minY)!)
       this.tree.insert(item);
@@ -36,8 +33,6 @@ export class SpatialTree {
   overlapPercent(boxA: BoxItem, boxB: BoxItem): number {
     return Math.max(0, Math.min(boxA.maxX, boxB.maxX) - Math.max(boxA.minX, boxB.minX)) * Math.max(0, Math.min(boxA.maxY, boxB.maxY) - Math.max(boxA.minY, boxB.minY));
    }
-
-
 
   // Check if a box would overlap with existing boxes
   hasOverlap(maxX: number, maxY: number, minX: number, minY: number): boolean {
@@ -52,12 +47,9 @@ export class SpatialTree {
   }
 
 
-  canInsert(
-  tree: RBush<BoxItem>,
-  toAdd: BoxItem
-): boolean {
+canInsert(toAdd: BoxItem): boolean {
   // 1. Narrow down candidates
-  const candidates = tree.search(toAdd);
+  const candidates = this.tree.search(toAdd);
 
   // 2. Exact geometry checks
   for (const inTree of candidates) {
