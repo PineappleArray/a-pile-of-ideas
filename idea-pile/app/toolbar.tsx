@@ -37,7 +37,7 @@ export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: Too
     if (onFontSizeChange) onFontSizeChange(newSize);
   }
 
-  
+
   const btnBase = 'inline-flex items-center gap-2 px-3 py-2 rounded-2xl text-sm font-medium transition-shadow focus:outline-none focus:ring-2 focus:ring-offset-2';
   const containerRef = useRef<HTMLDivElement>(null);
   const treeRef = useRef<SpatialTree>(new SpatialTree());
@@ -205,21 +205,4 @@ export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: Too
     }}></div>
     </>
   );
-
-    <div
-      ref={containerRef}
-      style={{
-        width: '100%',
-        height: '600px',
-        border: '2px solid #ccc',
-        position: 'relative',
-        backgroundColor: '#f5f5f5'
-      }}
-    >
-      Click to create textareas
-    </div>
-  //);
-//}
-
-
 }
