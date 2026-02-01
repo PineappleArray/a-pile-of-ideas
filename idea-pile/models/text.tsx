@@ -9,7 +9,7 @@ export class text extends Data {
     box_height: number;   
     text: string;
 
-    constructor(x: number, y: number, id: number, text: string, screen_width: number, screen_height: number, box_height: number, box_width: number){
+    constructor(x: number, y: number, id: string, text: string, screen_width: number, screen_height: number, box_height: number, box_width: number){
         super(x, y, id, screen_width, screen_height);
 
         this.fontSize = 16;

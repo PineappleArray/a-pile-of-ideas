@@ -19,7 +19,7 @@ export default function WhiteboardPage() {
     // Route click to the currently selected tool
     if (tool === 'text'){
       const rect = e.currentTarget.getBoundingClientRect();
-      const newText = new text(x, y, Date.now(), "New Text", rect.width, rect.height, 50, 200);
+      const newText = new text(x, y, Date.now().toString(), "New Text", rect.width, rect.height, 50, 200);
       setTextFields((prev) => [...prev, newText]);
       console.log('Created text at', x, y);
       return;

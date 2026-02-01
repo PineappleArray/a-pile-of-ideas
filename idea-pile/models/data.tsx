@@ -3,9 +3,9 @@ class Data {
     centerY: number;
     height: number;
     width: number;
-    id: number;
+    id: string;
 
-    constructor(centerX: number, centerY: number, id: number, height: number, width: number) {
+    constructor(centerX: number, centerY: number, id: string, height: number, width: number) {
         this.centerX = centerX;
         this.centerY = centerY;
         this.height = height;

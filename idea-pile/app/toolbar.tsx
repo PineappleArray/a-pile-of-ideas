@@ -6,6 +6,7 @@ import PenTool from './tools/penTool';
 import onCanvasClick from './tools/textbox';
 import { SpatialTree } from './utils/spatialtree';
 import { useEffect, useRef } from 'react';
+import { text } from '../models/text'
 
 
 // TopBar.jsx
@@ -22,6 +23,10 @@ const tree = new SpatialTree()
 export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: ToolBarProps) {
   const [active, setActive] = useState('select');
   const [fontSize, setFontSize] = useState(16);
+
+  //This will make a map that will hold all the text objects linked to their id
+  //using map for O(1) indexing
+  const textMap = new Map<string, text>();   
 
   //This will change the tools that are selected
   function handleTool(tool: string) {
@@ -79,7 +84,7 @@ export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: Too
           // Add it to the container
           container.appendChild(newArea);
           newArea.focus();
-
+          textMap.set(newArea.id, new text(x,y,newArea.id,"",-1,-1,width,height))
           // Add to spatial tree
           //treeRef.current.insert(x, y, width, height, newArea);
         } else {
@@ -96,6 +101,8 @@ export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: Too
           (textarea as HTMLTextAreaElement).style.backgroundColor = 'white';
         });
         
+        //textMap.get(i)?.editText(target.)
+        //textMap.set(target.id, )
         // Highlight selected one
         target.style.backgroundColor = 'lightblue';
       }
