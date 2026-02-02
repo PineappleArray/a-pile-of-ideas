@@ -3,7 +3,7 @@ import Data from "./data";
 class Sketch extends Data {
     data: any[][];
 
-    constructor(height: number, width: number, id: number, dataArray: any[][]) {
+    constructor(height: number, width: number, id: string, dataArray: any[][]) {
         super(0, 0, id, height, width); // Call parent constructor with default centerX and centerY
         this.id = id;
         this.data = new Array(height);

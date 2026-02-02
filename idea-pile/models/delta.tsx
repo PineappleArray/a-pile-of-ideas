@@ -103,7 +103,7 @@ export class DeltaManager {
                 position += change.value.length;
             }
         });
-        return operations;
+        return operations;  
     }
 }
 
