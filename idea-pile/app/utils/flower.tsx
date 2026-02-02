@@ -1,7 +1,7 @@
 import Data from "../../models/data"
-export class petal {
+export class flower {
 
-    data: Data;
+    
     
     constructor(data: Data){
         this.data = data
