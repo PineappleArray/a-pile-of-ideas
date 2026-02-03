@@ -1,3 +1,5 @@
+import { diffChars } from 'diff'; 
+
 //3 types where they each represent an action that the users takes in term of text
 //This is formated in a way where it will be the action and then the number of characters
 //that the action is impacting so RETAIN(10), DELETE(5) would retain the first 10 characters
@@ -8,6 +10,8 @@ type DeltaOp =
   | { type: 'delete'; count: number };
 
 //This will store a list of all the operations that were performed 
+//in sequential order so that the original value can be found by
+//reversing these operations
 interface Delta {
   ops: DeltaOp[];
 }
@@ -59,48 +63,20 @@ class DeltaEngine {
   static diff(oldText: string, newText: string): Delta {
     const ops: DeltaOp[] = [];
     
-    // Simple character-by-character diff
-    let i = 0;
-    let j = 0;
-    
-    while (i < oldText.length || j < newText.length) {
-      if (i < oldText.length && j < newText.length && oldText[i] === newText[j]) {
-        // Characters match - retain
-        let count = 0;
-        while (i < oldText.length && j < newText.length && oldText[i] === newText[j]) {
-          count++;
-          i++;
-          j++;
-        }
-        ops.push({ type: 'retain', count });
-      } else if (j < newText.length && (i >= oldText.length || oldText[i] !== newText[j])) {
-        // New character - insert
-        let text = '';
-        const startJ = j;
-        while (j < newText.length && (i >= oldText.length || oldText[i] !== newText[j])) {
-          text += newText[j];
-          j++;
-          // Look ahead to see if we can match again
-          if (i < oldText.length && j < newText.length && oldText[i] === newText[j]) {
-            break;
-          }
-        }
-        if (text) ops.push({ type: 'insert', text });
-      } else if (i < oldText.length) {
-        // Character deleted
-        let count = 0;
-        while (i < oldText.length && (j >= newText.length || oldText[i] !== newText[j])) {
-          count++;
-          i++;
-          // Look ahead to see if we can match again
-          if (i < oldText.length && j < newText.length && oldText[i] === newText[j]) {
-            break;
-          }
-        }
-        if (count > 0) ops.push({ type: 'delete', count });
+    const difference = diffChars(oldText, newText);
+
+    //Iterates through the list of differences
+    for(const d of difference){
+      const {value, added, removed} = d
+
+      if (added){
+        ops.push({type: 'insert', text: value})
+      } else if(removed){
+        ops.push({type: 'delete', count: value.length})
+      } else {
+        ops.push({type: 'retain', count: value.length})
       }
     }
-
     return { ops };
   }
 
