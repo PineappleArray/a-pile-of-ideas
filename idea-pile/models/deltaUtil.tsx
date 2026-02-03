@@ -12,19 +12,21 @@ interface Delta {
   ops: DeltaOp[];
 }
 
-//This acts as a sort of json of a keyframe as it stores all of the information
+//This acts as a sort of json with metadata of a snapshot as it stores all of the information
 //related to the edit
 interface Version {
   id: string;
   timestamp: number;
   author: string;
   parentId: string | null;
-  delta: Delta | null; // null for base snapshots
-  snapshot: string | null; // full content for base snapshots
+  delta: Delta | null;
+  snapshot: string | null; 
   description?: string;
   isSnapshot: boolean;
 }
 
+//This will store the versions and will prepare them for snapshot compression
+//to save space and traversal time
 interface VersionStore {
   versions: Map<string, Version>;
   currentVersionId: string;
