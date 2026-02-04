@@ -4,7 +4,7 @@ import { diffChars } from 'diff';
 //This is formated in a way where it will be the action and then the number of characters
 //that the action is impacting so RETAIN(10), DELETE(5) would retain the first 10 characters
 //of a string before deleting the 5 subsequent characters
-type DeltaOp = 
+export type DeltaOp = 
   | { type: 'retain'; count: number }
   | { type: 'insert'; text: string; attributes?: Record<string, any> }
   | { type: 'delete'; count: number };
@@ -12,13 +12,13 @@ type DeltaOp =
 //This will store a list of all the operations that were performed 
 //in sequential order so that the original value can be found by
 //reversing these operations
-interface Delta {
+export interface Delta {
   ops: DeltaOp[];
 }
 
 //This acts as a sort of json with metadata of a snapshot as it stores all of the information
 //related to the edit
-interface Version {
+export interface Version {
   id: string;
   timestamp: number;
   author: string;
@@ -31,13 +31,13 @@ interface Version {
 
 //This will store the versions and will prepare them for snapshot compression
 //to save space and traversal time
-interface VersionStore {
+export interface VersionStore {
   versions: Map<string, Version>;
   currentVersionId: string;
-  snapshotInterval: number; // Create snapshot every N versions
+  snapshotInterval: number;
 }
 
-class DeltaEngine {
+export class DeltaEngine {
   // Apply a delta to text
   static apply(text: string, delta: Delta): string {
     let result = '';
@@ -98,33 +98,6 @@ class DeltaEngine {
       }
     }
 
-    return { ops };
-  }
-
-  // Compose two deltas
-  static compose(delta1: Delta, delta2: Delta): Delta {
-    const ops: DeltaOp[] = [];
-    let i = 0, j = 0;
-    
-    // This is a simplified composition
-    // Full implementation would handle all edge cases
-    while (i < delta1.ops.length || j < delta2.ops.length) {
-      const op1 = delta1.ops[i];
-      const op2 = delta2.ops[j];
-      
-      if (!op2) {
-        ops.push(op1);
-        i++;
-      } else if (!op1) {
-        ops.push(op2);
-        j++;
-      } else {
-        // Simplified: just concatenate
-        ops.push(op1);
-        i++;
-      }
-    }
-    
     return { ops };
   }
 }

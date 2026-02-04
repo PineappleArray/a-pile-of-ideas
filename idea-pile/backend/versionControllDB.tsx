@@ -1,4 +1,8 @@
-class VersionStoreManager {
+import { VersionStore } from "@/models/deltaUtil";
+import { Version } from "@/models/deltaUtil";
+import { DeltaEngine } from "@/models/deltaUtil"
+
+class VersionStoreManager{
   private store: VersionStore;
 
   constructor() {
