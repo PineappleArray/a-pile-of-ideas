@@ -1,3 +1,4 @@
+//~
 import { diffChars } from 'diff'; 
 
 //3 types where they each represent an action that the users takes in term of text
@@ -59,7 +60,7 @@ export class DeltaEngine {
     return result;
   }
 
-  // Compute delta between two texts (simplified diff)
+  // Compute delta between two texts 
   static diff(oldText: string, newText: string): Delta {
     const ops: DeltaOp[] = [];
     
@@ -80,7 +81,7 @@ export class DeltaEngine {
     return { ops };
   }
 
-  // Invert a delta (for undo)
+  // Invert a delta to undo a change
   static invert(delta: Delta, baseText: string): Delta {
     const ops: DeltaOp[] = [];
     let position = 0;
@@ -99,5 +100,12 @@ export class DeltaEngine {
     }
 
     return { ops };
+  }
+
+  static toString (delta: Delta) {
+    for (const c of delta.ops){
+      console.log("value:", c.type);
+    }
+    console.log("____________")
   }
 }

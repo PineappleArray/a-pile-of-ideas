@@ -1,6 +1,6 @@
-import { VersionStore } from "@/models/deltaUtil";
-import { Version } from "@/models/deltaUtil";
-import { DeltaEngine } from "@/models/deltaUtil"
+import { VersionStore } from "@/delta/deltaUtil";
+import { Version } from "@/delta/deltaUtil";
+import { DeltaEngine } from "@/delta/deltaUtil"
 
 class VersionStoreManager{
   private store: VersionStore;
