@@ -1,10 +1,8 @@
 import {Delta} from './deltaUtil'
 import {DeltaOp} from './deltaUtil'
 export class BinaryDeltaEncoder {
-  /**
-   * Called BEFORE storing delta in database
-   * Converts Delta object → Uint8Array (binary)
-   */
+  
+  //This will
   encode(delta: Delta): Uint8Array {
     const parts: number[] = [];
     
