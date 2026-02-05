@@ -1,0 +1,18 @@
+server/
+├── ws/
+│   ├── WebSocketServer.ts
+│   └── ClientConnection.ts
+│
+├── document/
+│   ├── DocumentSession.ts    ← OT lives here
+│   ├── DocumentManager.ts    ← routes ops to sessions
+│
+├── ot/
+│   └── OperationalTransform.ts
+│
+├── storage/
+│   ├── OperationStore.ts
+│   ├── SnapshotStore.ts
+│   └── VersionStore.ts
+│
+└── index.ts
