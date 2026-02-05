@@ -4,6 +4,9 @@ import { DeltaOp } from "./deltaUtil.js"
 import { DeltaEngine } from "./deltaUtil.js"
 import { BinaryDeltaEncoder } from "./binaryEncoding.js"
 
+//to execute call
+//npx tsx delta/testCode.ts
+
 const nD1 = { type: 'retain', count: 1 }
 const nD2 = { type: 'delete', count: 2 }
 
