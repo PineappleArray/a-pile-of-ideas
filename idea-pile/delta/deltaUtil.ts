@@ -1,5 +1,4 @@
 //~
-import { diffChars } from 'diff'; 
 
 //3 types where they each represent an action that the users takes in term of text
 //This is formated in a way where it will be the action and then the number of characters
@@ -9,6 +8,15 @@ export type DeltaOp =
   | { type: 'retain'; count: number }
   | { type: 'insert'; text: string; attributes?: Record<string, any> }
   | { type: 'delete'; count: number };
+
+//these are the operations that are executed on the textbox
+export type TransformOp =
+  | { type: 'move'; dx: number; dy: number } //dx and dy is relative due to intent overriding
+  | { type: 'resize'; dw: number; dh: number } 
+
+export interface Transform{
+  ops: TransformOp[];
+}
 
 //This will store a list of all the operations that were performed 
 //in sequential order so that the original value can be found by
@@ -38,74 +46,68 @@ export interface VersionStore {
   snapshotInterval: number;
 }
 
-export class DeltaEngine {
-  // Apply a delta to text
-  static apply(text: string, delta: Delta): string {
-    let result = '';
-    let position = 0;
+//a edit on a document
+export interface DeltaMessage {
+  docId: string;
+  baseVersion: number;
+  ops: DeltaOp[];
+}
 
-    for (const op of delta.ops) {
-      if (op.type === 'retain') {
-        result += text.slice(position, position + op.count);
-        position += op.count;
-      } else if (op.type === 'insert') {
-        result += op.text;
-      } else if (op.type === 'delete') {
-        position += op.count;
-      }
-    }
+//merges multiple edits if they are the same type
+//to save space
+export function normalizeDelta(delta: Delta): Delta{
+  const toReturn: DeltaOp[] = [];
+  
+  for(const op of delta.ops){
+    const lastOp = toReturn[toReturn.length - 1];
 
-    // Add remaining text
-    result += text.slice(position);
-    return result;
-  }
-
-  // Compute delta between two texts 
-  static diff(oldText: string, newText: string): Delta {
-    const ops: DeltaOp[] = [];
-    
-    const difference = diffChars(oldText, newText);
-
-    //Iterates through the list of differences
-    for(const d of difference){
-      const {value, added, removed} = d
-
-      if (added){
-        ops.push({type: 'insert', text: value})
-      } else if(removed){
-        ops.push({type: 'delete', count: value.length})
+    if(!lastOp){
+      toReturn.push({...op})
+    } else {
+      if (op.type == 'retain' && lastOp.type == 'retain') {
+        lastOp.count += op.count;
+      } else if (op.type == 'delete' && lastOp.type == 'delete') {
+        lastOp.count += op.count;
+      } else if (op.type == 'insert' && lastOp.type == 'insert') {
+        lastOp.text += op.text;
       } else {
-        ops.push({type: 'retain', count: value.length})
+        toReturn.push({ ...op });
       }
     }
-    return { ops };
   }
+  return {ops: toReturn};
+}
 
-  // Invert a delta to undo a change
-  static invert(delta: Delta, baseText: string): Delta {
-    const ops: DeltaOp[] = [];
-    let position = 0;
+//merges multiple edits if they are the same type
+//to save space
+export function normalizeTransform(transform: Transform): Transform{
+  const toReturn: TransformOp[] = [];
+  
+  for(const op of transform.ops){
+    const lastOp = toReturn[toReturn.length - 1];
 
-    for (const op of delta.ops) {
-      if (op.type === 'retain') {
-        ops.push({ type: 'retain', count: op.count });
-        position += op.count;
-      } else if (op.type === 'insert') {
-        ops.push({ type: 'delete', count: op.text.length });
-      } else if (op.type === 'delete') {
-        const deleted = baseText.slice(position, position + op.count);
-        ops.push({ type: 'insert', text: deleted });
-        position += op.count;
+    if(!lastOp){
+      toReturn.push({...op})
+    } else {
+      if (op.type == 'move' && lastOp.type == 'move') {
+        lastOp.dx += op.dx;
+        lastOp.dy += op.dy;
+      } else if (op.type == 'resize' && lastOp.type == 'resize') {
+        lastOp.dh += op.dh;
+        lastOp.dw += op.dw;
+      } else {
+        toReturn.push({ ...op });
       }
     }
-
-    return { ops };
   }
+  return {ops: toReturn};
+}
 
-  static toString (delta: Delta) {
-    for (const c of delta.ops){
-      console.log("value:", c.type);
-    }
-    console.log("____________")
+//insures that the deltaop values are valid
+export function validateData(deltaOp: DeltaOp): void{
+  if((deltaOp.type == "retain" || deltaOp.type == "delete") && deltaOp.count < 0){
+    throw new Error("INVALID RETAIN OR DELETE LENGTH <0")
+  } else if(deltaOp.type == "insert" && deltaOp.text.length == 0){
+    throw new Error("INVALID INSERT LENGTH TEXT IS EMPTY")
   }
 }

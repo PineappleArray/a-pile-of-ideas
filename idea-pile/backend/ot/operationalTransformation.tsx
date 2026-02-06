@@ -1,6 +1,6 @@
 //Preserves deterministic edits as without using ops
 //Some edits will result in a random letter being deleting
-import { Delta, DeltaOp } from '../delta/deltaUtil';
+import { Delta, DeltaOp } from '../../delta/deltaUtil';
 
 //clones ops so objects are not permutated to ensure data safety
 //my code mutates the ops
@@ -129,4 +129,9 @@ function merge(ops: DeltaOp[]): DeltaOp[] {
     }
   }
   return out;
+/*
+  export function transformAgainstHistory(
+  delta: Delta,
+  history: Delta[]
+): Delta;*/
 }
