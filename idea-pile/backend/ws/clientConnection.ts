@@ -1,13 +1,23 @@
-class ClientConnection{
+export class ClientConnection{
     readonly clientId: string;
     private socket: WebSocket;
     private currentDocId?: string;
-    /*
-    send(msg: unknown): void;
-    close(): void;
+    
+    send(msg: unknown): void {
 
-    handleMessage(raw: unknown): void;
-    joinDocument(docId: string): void;
-    leaveDocument(): void;
-*/
+    }
+    close(): void {
+
+    }
+
+    handleMessage(raw: unknown): void {
+
+    }
+    joinDocument(type: string, docId: string, version: string): void {
+
+    }
+    leaveDocument(): void {
+
+    }
+
 }

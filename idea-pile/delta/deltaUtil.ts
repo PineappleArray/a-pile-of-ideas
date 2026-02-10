@@ -14,6 +14,7 @@ export type TransformOp =
   | { type: 'move'; dx: number; dy: number } //dx and dy is relative due to intent overriding
   | { type: 'resize'; dw: number; dh: number } 
 
+//holds the list of transforms
 export interface Transform{
   ops: TransformOp[];
 }
@@ -78,6 +79,15 @@ export function normalizeDelta(delta: Delta): Delta{
   return {ops: toReturn};
 }
 
+//insures that the deltaop values are valid
+export function validateData(deltaOp: DeltaOp): void{
+  if((deltaOp.type == "retain" || deltaOp.type == "delete") && deltaOp.count < 0){
+    throw new Error("INVALID RETAIN OR DELETE LENGTH <0")
+  } else if(deltaOp.type == "insert" && deltaOp.text.length == 0){
+    throw new Error("INVALID INSERT LENGTH TEXT IS EMPTY")
+  }
+}
+
 //merges multiple edits if they are the same type
 //to save space
 export function normalizeTransform(transform: Transform): Transform{
@@ -103,8 +113,9 @@ export function normalizeTransform(transform: Transform): Transform{
   return {ops: toReturn};
 }
 
+//IMPLEMENT TS LATER
 //insures that the deltaop values are valid
-export function validateData(deltaOp: DeltaOp): void{
+export function validateTransform(deltaOp: DeltaOp): void{
   if((deltaOp.type == "retain" || deltaOp.type == "delete") && deltaOp.count < 0){
     throw new Error("INVALID RETAIN OR DELETE LENGTH <0")
   } else if(deltaOp.type == "insert" && deltaOp.text.length == 0){

@@ -1,4 +1,4 @@
-class OperationStore{
+export class OperationStore{
     /*
 private db: DatabaseClient;
 
