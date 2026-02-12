@@ -1,9 +1,3 @@
-/**
- * DeltaOT.ts
- * Operational Transformation for your delta-based operations
- * This follows the Quill/ShareDB approach with retain/insert/delete
- */
-
 import { Delta, DeltaOp, normalizeDelta } from '../../delta/deltaUtil'; // adjust import path
 
 //transforms deltaA against deltaB
