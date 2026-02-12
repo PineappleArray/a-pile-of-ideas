@@ -1,3 +1,5 @@
+import { MongoClient, Db, Collection } from 'mongodb';
+
 export interface Snapshot {
   content: string;
   version: number;
@@ -10,49 +12,64 @@ export interface SnapshotStore {
   delete(documentId: string): Promise<void>;
 }
 
-export class DatabaseSnapshotStore implements SnapshotStore {
-  private db: any;
+// MongoDB document structure
+interface SnapshotDocument {
+  documentId: string;
+  content: string;
+  version: number;
+  timestamp: number;
+  updatedAt: Date;
+}
 
-  constructor(database: any) {
-    this.db = database;
+export class MongoSnapshotStore implements SnapshotStore {
+  private collection: Collection<SnapshotDocument>;
+
+  constructor(db: Db) {
+    this.collection = db.collection<SnapshotDocument>('snapshots');
+    this.createIndexes();
+  }
+
+  // Create indexes for fast lookups
+  private async createIndexes(): Promise<void> {
+    try {
+      await this.collection.createIndex({ documentId: 1 }, { unique: true });
+      await this.collection.createIndex({ updatedAt: 1 });
+    } catch (error) {
+      console.error('Failed to create indexes:', error);
+    }
   }
 
   async save(documentId: string, snapshot: Snapshot): Promise<void> {
-    await this.db.query(
-      `INSERT INTO snapshots (document_id, content, version, timestamp)
-       VALUES (?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE content = ?, version = ?, timestamp = ?`,
-      [
-        documentId,
-        snapshot.content,
-        snapshot.version,
-        snapshot.timestamp,
-        snapshot.content,
-        snapshot.version,
-        snapshot.timestamp
-      ]
+    await this.collection.updateOne(
+      { documentId },
+      {
+        $set: {
+          documentId,
+          content: snapshot.content,
+          version: snapshot.version,
+          timestamp: snapshot.timestamp,
+          updatedAt: new Date()
+        }
+      },
+      { upsert: true }  // Insert if doesn't exist, update if exists
     );
   }
 
   async load(documentId: string): Promise<Snapshot | null> {
-    const rows = await this.db.query(
-      'SELECT content, version, timestamp FROM snapshots WHERE document_id = ?',
-      [documentId]
-    );
+    const doc = await this.collection.findOne({ documentId });
 
-    if (rows.length === 0) return null;
+    if (!doc) {
+      return null;
+    }
 
     return {
-      content: rows[0].content,
-      version: rows[0].version,
-      timestamp: rows[0].timestamp
+      content: doc.content,
+      version: doc.version,
+      timestamp: doc.timestamp
     };
   }
 
   async delete(documentId: string): Promise<void> {
-    await this.db.query(
-      'DELETE FROM snapshots WHERE document_id = ?',
-      [documentId]
-    );
+    await this.collection.deleteOne({ documentId });
   }
 }

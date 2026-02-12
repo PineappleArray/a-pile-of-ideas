@@ -4,8 +4,6 @@ import { ClientConnection } from '../ws/clientConnection';
 //This manages: multiple users editing the same document, transforming operations from different users
 //broadcasting changes to all connected users, version tracking
 
-
-
 export interface User {
   connection: ClientConnection;
   userId: string;
@@ -90,27 +88,8 @@ export class DocumentSession {
     }
   }
 
-  /**
-   * Transform a delta against operations in history
-   * 
-   * When a client's operation is based on an old version,
-   * we need to transform it against all operations that happened since.
-   * 
-   * @param delta - The delta to transform
-   * @param baseVersion - Version the client was on
-   * @param currentVersion - Current server version
-   * @returns Transformed delta, or null if invalid
-   * 
-   * HINT: If baseVersion === currentVersion, no transformation needed
-   * HINT: Filter deltaHistory for versions between base and current
-   * HINT: Use transformAgainstSequence() from DeltaOT
-   */
+  //transform a delta against operations in history
   private transformDelta(delta: Delta, baseVersion: number, currentVersion: number): Delta | null {
-    // TODO: Implement transformation against history
-    // 1. If versions match, return delta unchanged
-    // 2. Get all deltas between baseVersion and currentVersion from history
-    // 3. Use transformAgainstSequence to transform against them
-    // 4. Return transformed delta
     if(currentVersion == this.version){
       return delta;
     }
