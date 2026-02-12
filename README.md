@@ -1,0 +1,1 @@
+This project is a full stack website that mimics google docs with multiple user edit functionality and version control. The stack of this project is typescript and next.js with typescript being chosen for its type safety and next.js chosen due to its fast server side rendering perfect for collaberative edits. 
