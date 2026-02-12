@@ -2,7 +2,10 @@
   "dependencies": {
     "bson": "^7.2.0",
     "diff": "^8.0.3",
-    "pako": "^2.1.0"
+    "ioredis": "^5.9.3",
+    "mongodb": "^7.1.0",
+    "pako": "^2.1.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/pako": "^2.0.4",
