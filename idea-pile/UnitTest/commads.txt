@@ -1,0 +1,26 @@
+// ============================================
+// RUN TESTS
+// ============================================
+
+
+To run these tests:
+
+1. Install Jest:
+   npm install --save-dev jest ts-jest @types/jest
+
+2. Configure Jest (jest.config.js):
+   module.exports = {
+     preset: 'ts-jest',
+     testEnvironment: 'node',
+     roots: ['<rootDir>/tests'],
+     testMatch: ['**/*.test.ts']
+   };
+
+3. Run tests:
+   npm test
+
+4. Run with coverage:
+   npm test -- --coverage
+
+5. Run specific test:
+   npm test -- DocumentSession
