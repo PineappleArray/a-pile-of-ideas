@@ -1,7 +1,7 @@
 import { Delta, DeltaOp, normalizeDelta } from '../../delta/deltaUtil'; // adjust import path
 
 //transforms deltaA against deltaB
-export function transform(deltaA: Delta, deltaB: Delta, priority: 'left' | 'right' = 'left'): Delta {
+export function transform(deltaA: Delta, deltaB: Delta, priority: 'left' | 'right' = 'right'): Delta {
   const opsA = [...deltaA.ops];
   const opsB = [...deltaB.ops];
   
@@ -16,101 +16,106 @@ export function transform(deltaA: Delta, deltaB: Delta, priority: 'left' | 'righ
   while (i < opsA.length || j < opsB.length) {
     const opA = opsA[i];
     const opB = opsB[j];
-    
+    console.log(opA);
+    console.log(opB);
+    console.log("------------")
     // If we've exhausted one side, append the rest
     if (!opA) {
       if (opB?.type === 'insert') {
         toReturn.push({ type: 'retain', count: opB.text.length });
       }
       j++;
-    }
-    
-    if (!opB) {
-      toReturn.push(opA);
+    } else if (!opB) {
+      if(opA.type === 'delete'){
+        toReturn.push({type: 'delete', count: opA.count - offsetA})
+      } else {
+        toReturn.push(opA);
+      }
       i++;
-    }
+    } else {
     
-    // Both are inserts
-    if (opA.type === 'insert' && opB.type === 'insert') {
-      if (priority === 'left') {
+      //if both are inserts
+      if (opA.type === 'insert' && opB.type === 'insert') {
+        if (priority === 'left') {
+          toReturn.push(opA);
+          i++;
+        } else {
+          toReturn.push({ type: 'retain', count: opB.text.length });
+          j++;
+        }
+      } else if (opA.type === 'insert' && opB.type === 'retain') { // A is insert, B is retain
         toReturn.push(opA);
         i++;
-      } else {
+      } else if (opA.type === 'insert' && opB.type === 'delete') { // A is insert, B is delete 
+        toReturn.push(opA);
+        i++;
+      } else if (opA.type === 'retain' && opB.type === 'insert') { // A is retain, B is insert
         toReturn.push({ type: 'retain', count: opB.text.length });
         j++;
-      }
-    } else if (opA.type === 'insert' && opB.type === 'retain') { // A is insert, B is retain
-      toReturn.push(opA);
-      i++;
-    } else if (opA.type === 'insert' && opB.type === 'delete') { // A is insert, B is delete 
-      toReturn.push(opA);
-      i++;
-    } else if (opA.type === 'retain' && opB.type === 'insert') { // A is retain, B is insert
-      toReturn.push({ type: 'retain', count: opB.text.length });
-      j++;
-    } else if (opA.type === 'retain' && opB.type === 'retain') { // A is retain, B is retain
-      const minLen = Math.min(opA.count - offsetA, opB.count - offsetB);
-      toReturn.push({ type: 'retain', count: minLen });
+      } else if (opA.type === 'retain' && opB.type === 'retain') { // A is retain, B is retain
+        const minLen = Math.min(opA.count - offsetA, opB.count - offsetB);
+        toReturn.push({ type: 'retain', count: minLen });
       
-      offsetA += minLen;
-      offsetB += minLen;
+        offsetA += minLen;
+        offsetB += minLen;
       
-      if (offsetA === opA.count) {
-        i++;
-        offsetA = 0;
+        if (offsetA === opA.count) {
+          i++;
+          offsetA = 0;
+        }
+        if (offsetB === opB.count) {
+          j++;
+          offsetB = 0;
+        }
       }
-      if (offsetB === opB.count) {
-        j++;
-        offsetB = 0;
-      }
-    }
     
-    // A is retain, B is delete
-    else if (opA.type === 'retain' && opB.type === 'delete') {
-      const minLen = Math.min(opA.count - offsetA, opB.count - offsetB);
+      //A is retain, B is delete
+      else if (opA.type === 'retain' && opB.type === 'delete') {
+        const minLen = Math.min(opA.count - offsetA, opB.count - offsetB);
       
-      offsetA += minLen;
-      offsetB += minLen;
+        offsetA += minLen;
+        offsetB += minLen;
       
-      if (offsetA === opA.count) {
-        i++;
-        offsetA = 0;
-      }
-      if (offsetB === opB.count) {
+        if (offsetA === opA.count) {
+          i++;
+          offsetA = 0;
+        }
+        if (offsetB === opB.count) {
+          j++;
+          offsetB = 0;
+        }
+      } else if (opA.type === 'delete' && opB.type === 'insert') { // A is delete, B is insert
+        toReturn.push({ type: 'retain', count: opB.text.length });
         j++;
-        offsetB = 0;
-      }
-    } else if (opA.type === 'delete' && opB.type === 'insert') { // A is delete, B is insert
-      toReturn.push({ type: 'retain', count: opB.text.length });
-      j++;
-    } else if (opA.type === 'delete' && opB.type === 'retain') { // A is delete, B is retain
-      const minLen = Math.min(opA.count - offsetA, opB.count - offsetB);
-      toReturn.push({ type: 'delete', count: minLen });
+      } else if (opA.type === 'delete' && opB.type === 'retain') { // A is delete, B is retain
+        const minLen = Math.min(opA.count - offsetA, opB.count - offsetB);
+        toReturn.push({ type: 'delete', count: minLen });
       
-      offsetA += minLen;
-      offsetB += minLen;
+        offsetA += minLen;
+        offsetB += minLen;
       
-      if (offsetA === opA.count) {
-        i++;
-        offsetA = 0;
-      }
-      if (offsetB === opB.count) {
-        j++;
-        offsetB = 0;
-      }
-    } else if (opA.type === 'delete' && opB.type === 'delete') { // A is delete, B is delete
-      const minLen = Math.min(opA.count - offsetA, opB.count - offsetB);
+        if (offsetA === opA.count) {
+          i++;
+          offsetA = 0;
+        }
+        if (offsetB === opB.count) {
+          j++;
+          offsetB = 0;
+        }
+      } else if (opA.type === 'delete' && opB.type === 'delete') { //A is delete, B is delete
+        const minLen = Math.min(opA.count - offsetA, opB.count - offsetB);
+        console.log("RESULT MIN: "+minLen +" OFF-SET-A: "+offsetA);
+        offsetA += minLen;
+        offsetB += minLen;
       
-      offsetA += minLen;
-      offsetB += minLen;
-      
-      if (offsetA === opA.count) {
-        i++;
-        offsetA = 0;
-      }
-      if (offsetB === opB.count) {
-        j++;
-        offsetB = 0;
+        if (offsetA === opA.count) {
+          i++;
+          offsetA = 0;
+        }
+        if (offsetB === opB.count) {
+          j++;
+          offsetB = 0;
+        }
       }
     }
   }

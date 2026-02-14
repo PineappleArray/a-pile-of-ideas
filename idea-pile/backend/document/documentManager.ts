@@ -10,6 +10,7 @@
 import { DocumentSession } from './documentSession';
 import { transform, apply } from '../ot/operationalTransformation';
 import { ClientConnection } from '../ws/clientConnection';
+import { IClientConnection } from '../ws/IClient';
 import { OperationStore } from '../storage/operationStore';
 import { SnapshotStore } from '../storage/snapshotStore';
 import { start } from 'repl';
@@ -70,7 +71,7 @@ export class DocumentManager {
   }
 
   //joins a user to a document session, connection point for users
-  public async joinSession(documentId: string, userId: string, connection: ClientConnection, initialContent?: string): Promise<DocumentSession> {
+  public async joinSession(documentId: string, userId: string, connection: IClientConnection, initialContent?: string): Promise<DocumentSession> {
     await this.leaveSession(userId);
     const session = await this.getOrCreateSession(documentId, initialContent);
     session.addUser(userId, connection);

@@ -1,11 +1,12 @@
 import { Delta, DeltaMessage, Version, normalizeDelta, DeltaOp } from '../../delta/deltaUtil'; // adjust path
 import { transform, apply, compose, transformAgainstSequence } from '../ot/operationalTransformation';
 import { ClientConnection } from '../ws/clientConnection';
+import { IClientConnection } from '../ws/IClient';
 //This manages: multiple users editing the same document, transforming operations from different users
 //broadcasting changes to all connected users, version tracking
 
 export interface User {
-  connection: ClientConnection;
+  connection: IClientConnection;
   userId: string;
   version: number;  // What version of the document this user has
   joinedAt: number;
@@ -39,7 +40,7 @@ export class DocumentSession {
   }
 
   //adds a user to the document and then informers the others of the user being added
-  public addUser(userId: string, connection: ClientConnection): void {
+  public addUser(userId: string, connection: IClientConnection): void {
     this.users.set(userId, {connection, userId, version: this.version, joinedAt: Date.now(), cursor: null});
     this.sendToUser(userId, "ADDED TO DOC");
     this.broadcastToOthers(userId, "ADDED " + userId + " TO DOCUMENT");
@@ -119,6 +120,11 @@ export class DocumentSession {
       user.cursor = cursor;
       this.broadcastToOthers(userId, cursor)
     }
+  }
+
+  //gets array of user IDs currently in this session
+  public getUsers(): string[] {
+    return Array.from(this.users.keys());
   }
 
   //sends a message of any type to a user

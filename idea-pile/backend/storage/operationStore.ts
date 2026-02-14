@@ -33,13 +33,13 @@ export interface OperationStore {
 
 
 export class RedisOperationStore implements OperationStore {
-  private redis = new Redis({
-    host: process.env.REDIS_HOST!,
-    port: Number(process.env.REDIS_PORT || 6379),
-  }); 
+  private redis;
   
-  constructor(redis: any) {
-    this.redis = redis;
+  constructor() {
+    this.redis = new Redis({
+      host: process.env.REDIS_HOST!,
+      port: Number(process.env.REDIS_PORT || 6379),
+    }); 
   }
   
   //adds an operation to redis

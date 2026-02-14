@@ -1,4 +1,4 @@
-import { MongoClient, Db, Collection } from 'mongodb';
+import { MongoClient, Collection } from "mongodb";
 
 export interface Snapshot {
   content: string;
@@ -22,21 +22,30 @@ interface SnapshotDocument {
 }
 
 export class MongoSnapshotStore implements SnapshotStore {
-  private collection: Collection<SnapshotDocument>;
+  private collection!: Collection<SnapshotDocument>;
 
-  constructor(db: Db) {
-    this.collection = db.collection<SnapshotDocument>('snapshots');
-    this.createIndexes();
+  private constructor() {}
+
+  /** Factory method (async-safe) */
+  static async create(): Promise<MongoSnapshotStore> {
+    const store = new MongoSnapshotStore();
+    await store.init();
+    return store;
   }
 
-  // Create indexes for fast lookups
+  private async init(): Promise<void> {
+    const client = new MongoClient("mongodb://localhost:27017");
+    await client.connect();
+
+    const db = client.db("your_db_name");
+    this.collection = db.collection<SnapshotDocument>("snapshots");
+
+    await this.createIndexes();
+  }
+
   private async createIndexes(): Promise<void> {
-    try {
-      await this.collection.createIndex({ documentId: 1 }, { unique: true });
-      await this.collection.createIndex({ updatedAt: 1 });
-    } catch (error) {
-      console.error('Failed to create indexes:', error);
-    }
+    await this.collection.createIndex({ documentId: 1 }, { unique: true });
+    await this.collection.createIndex({ updatedAt: 1 });
   }
 
   async save(documentId: string, snapshot: Snapshot): Promise<void> {
@@ -48,24 +57,21 @@ export class MongoSnapshotStore implements SnapshotStore {
           content: snapshot.content,
           version: snapshot.version,
           timestamp: snapshot.timestamp,
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       },
-      { upsert: true }  // Insert if doesn't exist, update if exists
+      { upsert: true }
     );
   }
 
   async load(documentId: string): Promise<Snapshot | null> {
     const doc = await this.collection.findOne({ documentId });
-
-    if (!doc) {
-      return null;
-    }
+    if (!doc) return null;
 
     return {
       content: doc.content,
       version: doc.version,
-      timestamp: doc.timestamp
+      timestamp: doc.timestamp,
     };
   }
 
@@ -73,3 +79,4 @@ export class MongoSnapshotStore implements SnapshotStore {
     await this.collection.deleteOne({ documentId });
   }
 }
+

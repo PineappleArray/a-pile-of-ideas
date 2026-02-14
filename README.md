@@ -12,6 +12,7 @@ type DeltaOp =
   | { type: 'delete'; count: number };
   
 In the occurance of multiple simultaneous edits the edits will be transformed against each other in a predetermined order before being executed on the document.
+
 FRONTEND: 
 The frontend is built with React and Next.js using TypeScript. I chose to have optimistic UI rendering as it will allow for a smoother user experience and less latency then if the changes were validated first on the server. The key challenge was providing instant feedback while maintaining sync across multiple users.
 For state management, I structured it in three layers:
@@ -29,3 +30,4 @@ unnecessary re-renders, and virtual scrolling for large documents.
 
 BACKEND:
 The backend is hosted on Docker and is single threaded as multi threading would introduce race conditions and complex locking mechanisms. The single threaded event loop prevents these issues while Next.js handles concurrency naturally. The databases that are utilized is mongoDB for storing snapshots and the complete contents of a file and redis for storing user edits and temporary document logs. The reasoning behind using mongoDB for storing larger more permanent data is due to its NoSQL and document friendly nature perfect for storing complex objects like entire files composed of multiple objects in a time and space efficient manner. The reason I chose Redis for storing edits is it's quick query times, its ability to handle a high number of edits, and its auto cleanup feature, along with the benefits of being stored on RAM. The reason I chose mongoDB for storing long term data is its space efficiency over Redis and the fact crashes will cause redis to lose memeory, redis stores data in RAM, making it volatile. MongoDB provides durability through persistent disk storage. Losing operations between snapshots is an acceptable trade-off for the architectural simplicity. In addition to that, while Redis can have methods for data presistence in the event of crashes either periodic data snapshots or append only files they would only introduce unnecessary complexity.
+Users (edits) --> Client Connection
