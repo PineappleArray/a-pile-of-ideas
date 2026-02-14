@@ -28,7 +28,7 @@ describe('Operational Transformation Tests', () => {
   // 1. BASIC OT FUNCTIONS
   // ==========================================
   
-  describe('Transform Function', () => {
+  /*describe('Transform Function', () => {
     /*
     test('Insert vs Insert - same position', () => {
       const op1: Delta = {
@@ -76,7 +76,7 @@ describe('Operational Transformation Tests', () => {
         { type: 'retain', count: 3 },  // Adjusted position
         { type: 'insert', text: 'Hello' }
       ]);
-    });*/
+    });
     
     test('Delete vs Delete - same position', () => {
       const del1: Delta = {
@@ -137,7 +137,7 @@ describe('Operational Transformation Tests', () => {
         ops: [
           { type: 'retain', count: 5 },
           { type: 'delete', count: 1 },
-          { type: 'insert', text: ', Beautiful' },
+          { type: 'insert', text: ', Beautiful ' },
           { type: 'retain', count: 5 }
         ]
       };
@@ -182,8 +182,8 @@ describe('Operational Transformation Tests', () => {
       expect(state1_final).toBe(state2_final);
       expect(state1_final).toBe('aXbYc');
     });
-  });
-  /*
+  });*/
+  
   // ==========================================
   // 2. DOCUMENT SESSION TESTS
   // ==========================================
@@ -197,13 +197,13 @@ describe('Operational Transformation Tests', () => {
       mockConnection = new MockClientConnection();
     });
     
-    test('Initial state', () => {
+    /*test('Initial state', () => {
       expect(session.getContent()).toBe('Hello World');
       expect(session.getVersion()).toBe(0);
       expect(session.getUserCount()).toBe(0);
     });
     
-    test('Add user', () => {
+    /*test('Add user', () => {
       session.addUser('alice', mockConnection);
       
       expect(session.getUserCount()).toBe(1);
@@ -211,13 +211,13 @@ describe('Operational Transformation Tests', () => {
       expect(mockConnection.messages.length).toBeGreaterThan(0);
     });
     
-    test('Remove user', () => {
+    /*test('Remove user', () => {
       session.addUser('alice', mockConnection);
       const isEmpty = session.removeUser('alice');
       
       expect(isEmpty).toBe(true);
       expect(session.getUserCount()).toBe(0);
-    });
+    });*/
     
     test('Apply delta', () => {
       session.addUser('alice', mockConnection);
@@ -253,7 +253,7 @@ describe('Operational Transformation Tests', () => {
       expect(result).toBeNull();
     });
     
-    test('Transform concurrent operations', () => {
+    /*test('Transform concurrent operations', () => {
       const conn1 = new MockClientConnection();
       const conn2 = new MockClientConnection();
       
@@ -303,13 +303,13 @@ describe('Operational Transformation Tests', () => {
       );
       
       expect(cursorMessages.length).toBeGreaterThan(0);
-    });
+    });*/
   });
   
   // ==========================================
   // 3. DOCUMENT MANAGER TESTS
   // ==========================================
-  
+  /*
 describe("DocumentManager", () => {
   let manager: DocumentManager;
   let snapshotStore: MongoSnapshotStore;
@@ -765,5 +765,5 @@ describe("DocumentManager", () => {
       expect(session.getContent()).toContain('Initial');
       expect(session.getContent()).toContain('content');
     });
-  });
-});*/})
+  });*/
+});

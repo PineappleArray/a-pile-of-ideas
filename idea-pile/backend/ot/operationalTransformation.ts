@@ -1,126 +1,134 @@
 import { Delta, DeltaOp, normalizeDelta } from '../../delta/deltaUtil'; // adjust import path
 
-//transforms deltaA against deltaB
 export function transform(deltaA: Delta, deltaB: Delta, priority: 'left' | 'right' = 'right'): Delta {
-  const opsA = [...deltaA.ops];
-  const opsB = [...deltaB.ops];
+  const result: DeltaOp[] = [];
   
-  const toReturn: DeltaOp[] = [];
+  let i = 0, j = 0;
+  const opsA = deltaA.ops;
+  const opsB = deltaB.ops;
   
-  let i = 0;
-  let j = 0;
-  let offsetA = 0;
-  let offsetB = 0;
+  // Helper to copy operation
+  function copyOp(op: DeltaOp): DeltaOp {
+    if (op.type === 'insert') {
+      return { ...op };
+    } else {
+      return { ...op };
+    }
+  }
   
-  //iterates thru A and B until it reaches the end of both
-  while (i < opsA.length || j < opsB.length) {
-    const opA = opsA[i];
-    const opB = opsB[j];
-    console.log(opA);
-    console.log(opB);
-    console.log("------------")
-    // If we've exhausted one side, append the rest
-    if (!opA) {
-      if (opB?.type === 'insert') {
-        toReturn.push({ type: 'retain', count: opB.text.length });
+  let currentA: DeltaOp | null = i < opsA.length ? copyOp(opsA[i]) : null;
+  let currentB: DeltaOp | null = j < opsB.length ? copyOp(opsB[j]) : null;
+  
+  while (currentA || currentB) {
+    // Only B remains
+    if (!currentA) {
+      if (currentB && currentB!.type === 'insert') {
+        result.push({ type: 'retain', count: currentB.text.length });
       }
       j++;
-    } else if (!opB) {
-      if(opA.type === 'delete'){
-        toReturn.push({type: 'delete', count: opA.count - offsetA})
-      } else {
-        toReturn.push(opA);
-      }
+      currentB = j < opsB.length ? copyOp(opsB[j]) : null;
+      continue;
+    }
+    
+    // Only A remains
+    if (!currentB) {
+      result.push(currentA);
       i++;
-    } else {
+      currentA = i < opsA.length ? copyOp(opsA[i]) : null;
+      continue;
+    }
     
-      //if both are inserts
-      if (opA.type === 'insert' && opB.type === 'insert') {
+    // Both present
+    if (currentA.type === 'insert') {
+      if (currentB.type === 'insert') {
         if (priority === 'left') {
-          toReturn.push(opA);
+          result.push(currentA);
           i++;
+          currentA = i < opsA.length ? copyOp(opsA[i]) : null;
         } else {
-          toReturn.push({ type: 'retain', count: opB.text.length });
+          result.push({ type: 'retain', count: currentB.text.length });
           j++;
+          currentB = j < opsB.length ? copyOp(opsB[j]) : null;
         }
-      } else if (opA.type === 'insert' && opB.type === 'retain') { // A is insert, B is retain
-        toReturn.push(opA);
+      } else {
+        result.push(currentA);
         i++;
-      } else if (opA.type === 'insert' && opB.type === 'delete') { // A is insert, B is delete 
-        toReturn.push(opA);
-        i++;
-      } else if (opA.type === 'retain' && opB.type === 'insert') { // A is retain, B is insert
-        toReturn.push({ type: 'retain', count: opB.text.length });
+        currentA = i < opsA.length ? copyOp(opsA[i]) : null;
+      }
+    } else if (currentA.type === 'retain') {
+      if (currentB.type === 'insert') {
+        result.push({ type: 'retain', count: currentB.text.length });
         j++;
-      } else if (opA.type === 'retain' && opB.type === 'retain') { // A is retain, B is retain
-        const minLen = Math.min(opA.count - offsetA, opB.count - offsetB);
-        toReturn.push({ type: 'retain', count: minLen });
-      
-        offsetA += minLen;
-        offsetB += minLen;
-      
-        if (offsetA === opA.count) {
+        currentB = j < opsB.length ? copyOp(opsB[j]) : null;
+      } else if (currentB.type === 'retain') {
+        const minLen = Math.min(currentA.count, currentB.count);
+        result.push({ type: 'retain', count: minLen });
+        
+        currentA = { type: 'retain', count: currentA.count - minLen };
+        currentB = { type: 'retain', count: currentB.count - minLen };
+        
+        if (currentA.count === 0) {
           i++;
-          offsetA = 0;
+          currentA = i < opsA.length ? copyOp(opsA[i]) : null;
         }
-        if (offsetB === opB.count) {
+        if (currentB.count === 0) {
           j++;
-          offsetB = 0;
+          currentB = j < opsB.length ? copyOp(opsB[j]) : null;
+        }
+      } else {
+        const minLen = Math.min(currentA.count, currentB.count);
+        
+        currentA = { type: 'retain', count: currentA.count - minLen };
+        currentB = { type: 'delete', count: currentB.count - minLen };
+        
+        if (currentA.count === 0) {
+          i++;
+          currentA = i < opsA.length ? copyOp(opsA[i]) : null;
+        }
+        if (currentB.count === 0) {
+          j++;
+          currentB = j < opsB.length ? copyOp(opsB[j]) : null;
         }
       }
-    
-      //A is retain, B is delete
-      else if (opA.type === 'retain' && opB.type === 'delete') {
-        const minLen = Math.min(opA.count - offsetA, opB.count - offsetB);
-      
-        offsetA += minLen;
-        offsetB += minLen;
-      
-        if (offsetA === opA.count) {
-          i++;
-          offsetA = 0;
-        }
-        if (offsetB === opB.count) {
-          j++;
-          offsetB = 0;
-        }
-      } else if (opA.type === 'delete' && opB.type === 'insert') { // A is delete, B is insert
-        toReturn.push({ type: 'retain', count: opB.text.length });
+    } else {
+      if (currentB.type === 'insert') {
+        result.push({ type: 'retain', count: currentB.text.length });
         j++;
-      } else if (opA.type === 'delete' && opB.type === 'retain') { // A is delete, B is retain
-        const minLen = Math.min(opA.count - offsetA, opB.count - offsetB);
-        toReturn.push({ type: 'delete', count: minLen });
-      
-        offsetA += minLen;
-        offsetB += minLen;
-      
-        if (offsetA === opA.count) {
+        currentB = j < opsB.length ? copyOp(opsB[j]) : null;
+      } else if (currentB.type === 'retain') {
+        const minLen = Math.min(currentA.count, currentB.count);
+        result.push({ type: 'delete', count: minLen });
+        
+        currentA = { type: 'delete', count: currentA.count - minLen };
+        currentB = { type: 'retain', count: currentB.count - minLen };
+        
+        if (currentA.count === 0) {
           i++;
-          offsetA = 0;
+          currentA = i < opsA.length ? copyOp(opsA[i]) : null;
         }
-        if (offsetB === opB.count) {
+        if (currentB.count === 0) {
           j++;
-          offsetB = 0;
+          currentB = j < opsB.length ? copyOp(opsB[j]) : null;
         }
-      } else if (opA.type === 'delete' && opB.type === 'delete') { //A is delete, B is delete
-        const minLen = Math.min(opA.count - offsetA, opB.count - offsetB);
-        console.log("RESULT MIN: "+minLen +" OFF-SET-A: "+offsetA);
-        offsetA += minLen;
-        offsetB += minLen;
-      
-        if (offsetA === opA.count) {
+      } else {
+        const minLen = Math.min(currentA.count, currentB.count);
+        
+        currentA = { type: 'delete', count: currentA.count - minLen };
+        currentB = { type: 'delete', count: currentB.count - minLen };
+        
+        if (currentA.count === 0) {
           i++;
-          offsetA = 0;
+          currentA = i < opsA.length ? copyOp(opsA[i]) : null;
         }
-        if (offsetB === opB.count) {
+        if (currentB.count === 0) {
           j++;
-          offsetB = 0;
+          currentB = j < opsB.length ? copyOp(opsB[j]) : null;
         }
       }
     }
   }
   
-  return normalizeDelta({ ops: toReturn });
+  return { ops: result };
 }
 
 //merges 2 delta lists into 1
@@ -267,10 +275,7 @@ export function apply(text: string, delta: Delta): string {
   return result;
 }
 
-/**
- * Invert a delta (for undo functionality)
- * Given text and delta, returns a delta that undoes the operation
- */
+//invert a delta (for undo functionality)
 export function invert(delta: Delta, baseText: string): Delta {
   const ops: DeltaOp[] = [];
   let index = 0;
@@ -293,10 +298,8 @@ export function invert(delta: Delta, baseText: string): Delta {
   return normalizeDelta({ ops });
 }
 
-/**
- * Transform against a sequence of deltas
- * Used when a client needs to catch up with multiple server operations
- */
+//transform against a sequence of deltas
+//used when a client needs to catch up with multiple server operations
 export function transformAgainstSequence(delta: Delta, deltas: Delta[]): Delta {
   let result = delta;
   
@@ -307,17 +310,13 @@ export function transformAgainstSequence(delta: Delta, deltas: Delta[]): Delta {
   return result;
 }
 
-/**
- * Check if a delta is a no-op (does nothing)
- */
+//check if a delta has no ops
 export function isNoop(delta: Delta): boolean {
   return delta.ops.length === 0 || 
     (delta.ops.length === 1 && delta.ops[0].type === 'retain');
 }
 
-/**
- * Get the length change caused by a delta
- */
+//get the length change caused by a delta
 export function getLengthChange(delta: Delta): number {
   let change = 0;
   
@@ -332,10 +331,9 @@ export function getLengthChange(delta: Delta): number {
   return change;
 }
 
-/**
- * Convert position-based operation to delta
- * Useful for converting simple insert/delete to delta format
- */
+
+//convert position-based operation to delta
+//useful for converting simple insert/delete to delta format
 export function positionToDelta(
   position: number,
   operation: { type: 'insert'; text: string } | { type: 'delete'; length: number },
@@ -343,22 +341,22 @@ export function positionToDelta(
 ): Delta {
   const ops: DeltaOp[] = [];
   
-  // Retain up to position
+  //retain up to position
   if (position > 0) {
     ops.push({ type: 'retain', count: position });
   }
   
-  // Perform operation
+  //perform operation
   if (operation.type === 'insert') {
     ops.push({ type: 'insert', text: operation.text });
-    // Retain rest of document
+    //retain rest of document
     const remaining = docLength - position;
     if (remaining > 0) {
       ops.push({ type: 'retain', count: remaining });
     }
   } else {
     ops.push({ type: 'delete', count: operation.length });
-    // Retain rest of document
+    //retain rest of document
     const remaining = docLength - position - operation.length;
     if (remaining > 0) {
       ops.push({ type: 'retain', count: remaining });

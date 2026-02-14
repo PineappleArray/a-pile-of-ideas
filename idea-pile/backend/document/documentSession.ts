@@ -2,13 +2,14 @@ import { Delta, DeltaMessage, Version, normalizeDelta, DeltaOp } from '../../del
 import { transform, apply, compose, transformAgainstSequence } from '../ot/operationalTransformation';
 import { ClientConnection } from '../ws/clientConnection';
 import { IClientConnection } from '../ws/IClient';
+
 //This manages: multiple users editing the same document, transforming operations from different users
 //broadcasting changes to all connected users, version tracking
 
 export interface User {
   connection: IClientConnection;
   userId: string;
-  version: number;  // What version of the document this user has
+  version: number;  //What version of the document this user has
   joinedAt: number;
   cursor: { line: number; ch: number } | null;
 }
@@ -35,91 +36,149 @@ export class DocumentSession {
     this.users = new Map();
     this.deltaHistory = [];
     this.content = initialContent;
-
     this.maxHistorySize = 1000;
   }
 
-  //adds a user to the document and then informers the others of the user being added
+  //adds a user to the document and then informs the others of the user being added
   public addUser(userId: string, connection: IClientConnection): void {
-    this.users.set(userId, {connection, userId, version: this.version, joinedAt: Date.now(), cursor: null});
-    this.sendToUser(userId, "ADDED TO DOC");
-    this.broadcastToOthers(userId, "ADDED " + userId + " TO DOCUMENT");
+    console.log("ADDED: -" + userId + "-");
+    
+    this.users.set(userId, {
+      connection, 
+      userId, 
+      version: this.version, 
+      joinedAt: Date.now(), 
+      cursor: null
+    });
+    
+    //send init message to the new user
+    connection.send({
+      type: 'init',
+      content: this.content,
+      version: this.version,
+      users: this.getUsers()
+    });
+    
+    //notify other users
+    this.broadcastToOthers(userId, {
+      type: 'user-joined',
+      userId
+    });
   }
 
   //tells if users have left the document and returns true if the doc is empty
   public removeUser(userId: string): boolean {
     this.users.delete(userId);
-    this.broadcast(userId + " has left the document");
-    return this.users.size == 0;
+    
+    //notify other users
+    this.broadcast({
+      type: 'user-left',
+      userId
+    });
+    
+    return this.users.size === 0;
   }
 
-  /**
-   * Apply a delta operation from a client
-   * 
-   * This is the CORE of OT! When a client sends an operation:
-   * 1. Get the user who sent it
-   * 2. Transform the operation against all operations since the user's base version
-   * 3. Apply the transformed operation to the document
-   * 4. Increment version
-   * 5. Store in history
-   * 6. Update user's version
-   * 7. Broadcast to other users
-   * 
-   * @param userId - User who made the edit
-   * @param message - Contains baseVersion and ops
-   * @returns The new version and transformed delta, or null if invalid
-   * 
-   * HINT: Use transformDelta() helper to transform against history
-   * HINT: Use apply() from DeltaOT to update content
-   * HINT: Don't forget to normalize the delta!
-   */
+  //apply a delta operation from a client
   public applyDelta(userId: string, message: DeltaMessage): { version: number; delta: Delta } | null {
     const user = this.users.get(userId);
 
-    if(!user || !user.version){
+    if (!user) {
       throw new Error("INVALID USER ID");
-    } else {
-      const delta = normalizeDelta({ops: message.ops});
-      const transformed = this.transformDelta(delta, user.version, this.version);
-      if(!transformed){
-        throw new Error("THE TRANSFORMATION IS RETURNING A NULL");
-      }
-      this.deltaHistory.push({delta: transformed, version: this.version++, author: userId, timestamp: Date.now()})
-      return {version: this.version, delta: transformed};
     }
+    
+    //normalize the incoming delta
+    const delta = normalizeDelta({ops: message.ops});
+    
+    //transform against any operations that happened after user's base version
+    const transformed = this.transformDelta(delta, message.baseVersion, this.version);
+    
+    if (!transformed) {
+      console.error('Transformation failed');
+      return null;
+    }
+    
+    console.log('Transformed delta:', transformed);
+    
+    this.content = apply(this.content, transformed);
+
+    this.version++;
+    
+    this.deltaHistory.push({
+      delta: transformed,
+      version: this.version,
+      author: userId,
+      timestamp: Date.now()
+    });
+    
+    user.version = this.version;
+    
+    this.broadcastDelta(transformed, this.version, userId);
+    
+    //trim history if needed
+    if (this.deltaHistory.length > this.maxHistorySize) {
+      this.trimHistory();
+    }
+    
+    return {version: this.version, delta: transformed};
   }
 
   //transform a delta against operations in history
   private transformDelta(delta: Delta, baseVersion: number, currentVersion: number): Delta | null {
-    if(currentVersion == this.version){
+    // If client is already at current version, no transformation needed
+    if (baseVersion === currentVersion) {
       return delta;
     }
+    
+    //validate version numbers
+    if (baseVersion > currentVersion) {
+      console.error('Base version is ahead of current version');
+      return null;
+    }
+    
+    //get operations between baseVersion and currentVersion
     const ops = this.deltaHistory.filter(
-        h => h.version > baseVersion && h.version <= currentVersion
-      );
-      const histList: Delta[] = [] 
-      for(const op of ops){
-        histList.concat(op.delta)
-      }
+      h => h.version > baseVersion && h.version <= currentVersion
+    );
+    
+    const histList: Delta[] = ops.map(op => op.delta);
+    
+    //transform against sequence
     return transformAgainstSequence(delta, histList);
+  }
+
+  //broadcasts a delta to all users except the author
+  private broadcastDelta(delta: Delta, version: number, excludeUserId: string): void {
+    for (const [userId, user] of this.users) {
+      if (userId !== excludeUserId) {
+        user.connection.sendDelta(delta, version, excludeUserId);
+      }
+    }
   }
 
   //this will return the edits since the version that was inputed
   public getDeltasSince(version: number): HistoricalDelta[] {
     return this.deltaHistory.filter(
-      h=> h.version > version
+      h => h.version > version
     );
   }
 
-  //this will send a cursor of a users to the rest of the users
+  //this will send a cursor of a user to the rest of the users
   public updateCursor(userId: string, cursor: { line: number; ch: number }): void {
     const user = this.users.get(userId);
-    if(!user){
+    
+    if (!user) {
       throw new Error("INVALID USERID, USERID NOT FOUND");
-    } else {
-      user.cursor = cursor;
-      this.broadcastToOthers(userId, cursor)
     }
+    
+    user.cursor = cursor;
+    
+    //broadcasts cursor update
+    this.broadcastToOthers(userId, {
+      type: 'cursor',
+      userId,
+      cursor
+    });
   }
 
   //gets array of user IDs currently in this session
@@ -130,43 +189,49 @@ export class DocumentSession {
   //sends a message of any type to a user
   private sendToUser(userId: string, message: any): void {
     const user = this.users.get(userId);
-     if(!user){
+    
+    if (!user) {
       throw new Error("INVALID USERID, USERID NOT FOUND");
+    }
+    
+    if (user.connection) {
+      user.connection.send(message);
     } else {
-      if(user.connection) {
-        user.connection.send(message);
-      } else {
-        throw new Error(userId+" MISSING COMMUNICATION");
-      }
+      throw new Error(userId + " MISSING COMMUNICATION");
     }
   }
 
   //sends a message to all other clients except the one excluded
   //used for informing all other users about the excluded users actions
   private broadcastToOthers(excludeUserId: string, message: any): void {
-    for(const user in this.users.keys){
-      if(user != excludeUserId){
-        const connection = this.users.get(user)?.connection;
-        if(connection){
-          connection.send(message);
-        }
+    for (const [userId, user] of this.users) {
+      if (userId !== excludeUserId) {
+        user.connection.send(message);
       }
     }
   }
 
   //send a message to every user
   private broadcast(message: any): void {
-    for(const user in this.users.keys){
-        const connection = this.users.get(user)?.connection;
-        if(connection){
-          connection.send(message);
-        }
+    for (const user of this.users.values()) {
+      user.connection.send(message);
     }
   }
 
-  //returns all the info abt a document with: documentId, version, userCount, contentLength, users info
+  //returns all the info about a document
   public getState() {
-    return this
+    return {
+      documentId: this.documentId,
+      version: this.version,
+      userCount: this.users.size,
+      contentLength: this.content.length,
+      users: Array.from(this.users.values()).map(u => ({
+        userId: u.userId,
+        version: u.version,
+        joinedAt: u.joinedAt,
+        cursor: u.cursor
+      }))
+    };
   }
 
   //returns content
@@ -194,24 +259,24 @@ export class DocumentSession {
     return this.users.size;
   }
 
-  //implement later
+  //rebuild document content from history and is useful for recovering state or debugging
   public rebuildFromHistory(initialContent: string): string {
-    // TODO: Implement
-    // Start with initialContent, apply each delta in history
+    let content = initialContent;
     
-    throw new Error('Not implemented');
+    //apply each delta in order
+    for (const historical of this.deltaHistory) {
+      content = apply(content, historical.delta);
+    }
+    
+    return content;
   }
 
-
-  //Keep history size manageable by removing old deltas.
- 
-  //HINT: Check if deltaHistory.length > maxHistorySize
-  //HINT: Use array.shift() to remove from front
-   
+  //keep history size manageable by removing old deltas
   private trimHistory(): void {
-    // TODO: Implement
-    // Remove oldest deltas if history is too long
-    
-    throw new Error('Not implemented');
+    if (this.deltaHistory.length > this.maxHistorySize) {
+      const toRemove = this.deltaHistory.length - this.maxHistorySize;
+      this.deltaHistory.splice(0, toRemove);
+      console.log(`Trimmed ${toRemove} old deltas from history`);
+    }
   }
 }
