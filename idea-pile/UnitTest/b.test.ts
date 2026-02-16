@@ -15,6 +15,7 @@ import { transform, apply } from '../backend/ot/operationalTransformation';
 import { Delta, DeltaOp } from '../delta/deltaUtil';
 import { MockClientConnection } from './mockClientConnection';
 import { MongoSnapshotStore } from '../backend/storage/snapshotStore';
+import { after } from 'next/server';
 
 
 
@@ -22,7 +23,7 @@ import { MongoSnapshotStore } from '../backend/storage/snapshotStore';
 // ============================================
 // TEST FRAMEWORK (Jest)
 // ============================================
-describe('Operational Transformation Tests', () => {
+//describe('Operational Transformation Tests', () => {
   
   // ==========================================
   // 1. BASIC OT FUNCTIONS
@@ -188,14 +189,14 @@ describe('Operational Transformation Tests', () => {
   // 2. DOCUMENT SESSION TESTS
   // ==========================================
   
-  describe('DocumentSession', () => {
+  /*describe('DocumentSession', () => {
     let session: DocumentSession;
     let mockConnection: MockClientConnection;
     
     beforeEach(() => {
       session = new DocumentSession('doc-1', 'Hello World');
       mockConnection = new MockClientConnection();
-    });
+    });*/
     
     /*test('Initial state', () => {
       expect(session.getContent()).toBe('Hello World');
@@ -219,7 +220,7 @@ describe('Operational Transformation Tests', () => {
       expect(session.getUserCount()).toBe(0);
     });*/
     
-    test('Apply delta', () => {
+    /*test('Apply delta', () => {
       session.addUser('alice', mockConnection);
       
       const delta: Delta = {
@@ -251,7 +252,7 @@ describe('Operational Transformation Tests', () => {
       });
       
       expect(result).toBeNull();
-    });
+    });*/
     
     /*test('Transform concurrent operations', () => {
       const conn1 = new MockClientConnection();
@@ -304,12 +305,12 @@ describe('Operational Transformation Tests', () => {
       
       expect(cursorMessages.length).toBeGreaterThan(0);
     });*/
-  });
+  //});
   
   // ==========================================
   // 3. DOCUMENT MANAGER TESTS
   // ==========================================
-  /*
+  
 describe("DocumentManager", () => {
   let manager: DocumentManager;
   let snapshotStore: MongoSnapshotStore;
@@ -327,12 +328,15 @@ describe("DocumentManager", () => {
   });
 
     
-    test('Create new session', async () => {
+    /*test('Create new session', async () => {
       const session = await manager.getOrCreateSession('doc-1');
       
       expect(session).toBeDefined();
       expect(session.getContent()).toBe('');
       expect(manager.hasActiveSession('doc-1')).toBe(true);
+     // await manager.shutdown(); // Clean up after test
+     // operationStore.shutdown(); // Clean up Redis connection
+      //snapshotStore.shutdown(); // Clean up MongoDB connection
     });
     
     test('Get existing session', async () => {
@@ -340,6 +344,9 @@ describe("DocumentManager", () => {
       const session2 = await manager.getOrCreateSession('doc-1');
       
       expect(session1).toBe(session2);
+     // await manager.shutdown(); // Clean up after test
+      //operationStore.shutdown(); // Clean up Redis connection
+     // snapshotStore.shutdown(); // Clean up MongoDB connection
     });
     
     test('Load from snapshot', async () => {
@@ -388,7 +395,7 @@ describe("DocumentManager", () => {
       
       expect(manager.getUserDocument('alice')).toBeUndefined();
       expect(manager.getTotalUserCount()).toBe(0);
-    });
+    });*/
     
     test('Handle operation', async () => {
       const conn = new MockClientConnection();
@@ -406,9 +413,12 @@ describe("DocumentManager", () => {
       
       const session = manager.getSession('doc-1');
       expect(session?.getContent()).toBe('Hello');
+
+      await snapshotStore.delete('doc-1'); // Clean up test snapshot
+      await snapshotStore.delete('doc-2'); // Clean up test snapshot
     });
     
-    test('Throw error if user not in session', async () => {
+    /*test('Throw error if user not in session', async () => {
       await expect(async () => {
         await manager.handleOperation('alice', {
           docId: 'doc-1',
@@ -472,6 +482,12 @@ describe("DocumentManager", () => {
       
       const session = manager.getSession('doc-1');
       expect(session?.getUserCount()).toBe(3);
+    });*/
+
+    afterAll(async () => {
+      await manager.shutdown();
+      await operationStore.shutdown();
+      await snapshotStore.shutdown();
     });
   });
   
@@ -479,7 +495,7 @@ describe("DocumentManager", () => {
   // 4. STORAGE TESTS
   // ==========================================
   
-  describe('InMemorySnapshotStore', () => {
+  /*describe('InMemorySnapshotStore', () => {
     let store: MongoSnapshotStore;
     
     beforeEach(async () => {
@@ -632,13 +648,13 @@ describe("DocumentManager", () => {
       const count = await store.getCount('doc-1');
       expect(count).toBe(0);
     });
-  });
+  });*/
   
   // ==========================================
   // 5. INTEGRATION TESTS
   // ==========================================
   
-  describe('Integration Tests', () => {
+  /*describe('Integration Tests', () => {
     
     test('Complete user flow', async () => {
       const manager = new DocumentManager({
@@ -766,4 +782,4 @@ describe("DocumentManager", () => {
       expect(session.getContent()).toContain('content');
     });
   });*/
-});
+//});

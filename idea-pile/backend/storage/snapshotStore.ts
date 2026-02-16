@@ -1,4 +1,4 @@
-import { MongoClient, Collection } from "mongodb";
+import { MongoClient, Collection, Db } from "mongodb";
 
 export interface Snapshot {
   content: string;
@@ -12,7 +12,7 @@ export interface SnapshotStore {
   delete(documentId: string): Promise<void>;
 }
 
-// MongoDB document structure
+//MongoDB document structure
 interface SnapshotDocument {
   documentId: string;
   content: string;
@@ -22,30 +22,37 @@ interface SnapshotDocument {
 }
 
 export class MongoSnapshotStore implements SnapshotStore {
+  private client!: MongoClient;
+  private db!: Db; 
   private collection!: Collection<SnapshotDocument>;
 
   private constructor() {}
 
-  /** Factory method (async-safe) */
-  static async create(): Promise<MongoSnapshotStore> {
+  //creates a new instance of the db
+  //change after testing
+  static async create(mongoUrl: string = "mongodb://localhost:27017",dbName: string = "ot-test-db"): Promise<MongoSnapshotStore> {
     const store = new MongoSnapshotStore();
-    await store.init();
+    await store.init(mongoUrl, dbName);
     return store;
   }
 
-  private async init(): Promise<void> {
-    const client = new MongoClient("mongodb://localhost:27017");
-    await client.connect();
+  private async init(mongoUrl: string, dbName: string): Promise<void> {
+    this.client = new MongoClient(mongoUrl);
+    await this.client.connect();
 
-    const db = client.db("your_db_name");
-    this.collection = db.collection<SnapshotDocument>("snapshots");
+    this.db = this.client.db(dbName); 
+    this.collection = this.db.collection<SnapshotDocument>("snapshots");
 
     await this.createIndexes();
   }
 
   private async createIndexes(): Promise<void> {
-    await this.collection.createIndex({ documentId: 1 }, { unique: true });
-    await this.collection.createIndex({ updatedAt: 1 });
+    try {
+      await this.collection.createIndex({ documentId: 1 }, { unique: true });
+      await this.collection.createIndex({ updatedAt: 1 });
+    } catch (error) {
+      console.error('Failed to create indexes:', error);
+    }
   }
 
   async save(documentId: string, snapshot: Snapshot): Promise<void> {
@@ -78,5 +85,35 @@ export class MongoSnapshotStore implements SnapshotStore {
   async delete(documentId: string): Promise<void> {
     await this.collection.deleteOne({ documentId });
   }
-}
 
+  async clear(): Promise<void> {
+    await this.collection.deleteMany({});
+  }
+
+  async dropCollection(): Promise<void> {
+    try {
+      await this.collection.drop();
+    } catch (error: any) {
+      // Ignore error if collection doesn't exist
+      if (error.code !== 26) {  // 26 = NamespaceNotFound
+        throw error;
+      }
+    }
+  }
+
+  async dropDatabase(): Promise<void> {
+    await this.db.dropDatabase();
+  }
+
+  async count(): Promise<number> {
+    return await this.collection.countDocuments();
+  }
+
+  async getAll(): Promise<SnapshotDocument[]> {
+    return await this.collection.find({}).toArray();
+  }
+
+  async shutdown(): Promise<void> {
+    await this.client.close();
+  }
+}

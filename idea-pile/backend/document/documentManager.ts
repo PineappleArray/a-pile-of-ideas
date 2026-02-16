@@ -111,15 +111,12 @@ public async handleOperation(userId: string, message: DeltaMessage): Promise<{ v
       result.version % this.config.snapshotInterval === 0) {
     await this.saveSnapshot(documentId, session);   //js is single threaded so no need for locks
   }
-  
+  console.log(`Handled operation for user ${userId} on document ${documentId}, new delta: ${result?.delta.ops}`);
   return result;
 }
 
   //update a user's cursor position
-  public updateCursor(
-    userId: string,
-    cursor: { line: number; ch: number }
-  ): void {
+  public updateCursor(userId: string, cursor: { line: number; ch: number }): void {
     const docId = this.userToDocument.get(userId);
     if(docId){
         this.getSession(docId)?.updateCursor(userId, cursor);
@@ -171,7 +168,7 @@ public async handleOperation(userId: string, message: DeltaMessage): Promise<{ v
   //checks for empty sessions and removes them
   private startCleanup(): void {
     this.cleanupInterval = setInterval(() => {
-      console.log('Running cleanup...');
+      //console.log('Running cleanup...');
       
       for (const [documentId, session] of this.sessions) {
         if (session.getUserCount() === 0) {
@@ -181,20 +178,21 @@ public async handleOperation(userId: string, message: DeltaMessage): Promise<{ v
     }, 60000); //1 minute
   }
 
+//stops the cleaner after shutdown
 public async shutdown(): Promise<void> {
-    // Stop cleanup
+    //stop cleanup
     if (this.cleanupInterval) {
         clearInterval(this.cleanupInterval);
         this.cleanupInterval = undefined;
     }
     
-    // Save all sessions
+    //save all sessions
     const savePromises = Array.from(this.sessions.entries()).map(
         ([documentId, session]) => this.saveSnapshot(documentId, session)
     );
     
     await Promise.all(savePromises);
-    console.log(`Shutdown complete. Saved ${savePromises.length} snapshots.`);
+    //console.log(`Shutdown complete. Saved ${savePromises.length} snapshots.`);
 }
 
   //manually saves the document
@@ -205,8 +203,9 @@ public async shutdown(): Promise<void> {
     }
   }
 
-  //Get stats about the manager
+  //get stats about the manager
   public getStats() {
     return {totalSessions: this.sessions.size, totalUsers: this.userToDocument.size, sessions: this.getAllSessions()}
   }
 }
+

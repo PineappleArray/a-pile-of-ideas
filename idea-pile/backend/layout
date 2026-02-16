@@ -4,8 +4,8 @@ server/
 │   └── ClientConnection.ts
 │
 ├── document/
-│   ├── DocumentSession.ts    ← OT lives here
-│   ├── DocumentManager.ts    ← routes ops to sessions
+│   ├── DocumentSession.ts  
+│   ├── DocumentManager.ts   
 │
 ├── ot/
 │   └── OperationalTransform.ts

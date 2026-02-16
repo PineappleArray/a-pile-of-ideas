@@ -21,10 +21,7 @@ export interface OperationStore {
 
   save(operation: StoredOperation): Promise<void>;
   
-  getOperationsSince(
-    documentId: string,
-    sinceVersion: number
-  ): Promise<StoredOperation[]>;
+  getOperationsSince(documentId: string, sinceVersion: number): Promise<StoredOperation[]>;
   
   delete(documentId: string): Promise<void>;
 
@@ -86,6 +83,10 @@ export class RedisOperationStore implements OperationStore {
     const key = `ops:${documentId}`;
     const res = await this.redis.lrange(key, 0, -1);
     return res.length;
+  }
+
+  async shutdown(): Promise<void> {
+    await this.redis.quit();
   }
 }
 /*
