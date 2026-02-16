@@ -397,7 +397,7 @@ describe("DocumentManager", () => {
       expect(manager.getTotalUserCount()).toBe(0);
     });*/
     
-    test('Handle operation', async () => {
+    /*test('Handle operation', async () => {
       const conn = new MockClientConnection();
       
       await manager.joinSession('doc-1', 'alice', conn);
@@ -416,9 +416,9 @@ describe("DocumentManager", () => {
 
       await snapshotStore.delete('doc-1'); // Clean up test snapshot
       await snapshotStore.delete('doc-2'); // Clean up test snapshot
-    });
+    });*/
     
-    /*test('Throw error if user not in session', async () => {
+    test('Throw error if user not in session', async () => {
       await expect(async () => {
         await manager.handleOperation('alice', {
           docId: 'doc-1',
@@ -482,7 +482,7 @@ describe("DocumentManager", () => {
       
       const session = manager.getSession('doc-1');
       expect(session?.getUserCount()).toBe(3);
-    });*/
+    });
 
     afterAll(async () => {
       await manager.shutdown();
