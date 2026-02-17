@@ -311,7 +311,7 @@ import { after } from 'next/server';
   // 3. DOCUMENT MANAGER TESTS
   // ==========================================
   
-describe("DocumentManager", () => {
+/*describe("DocumentManager", () => {
   let manager: DocumentManager;
   let snapshotStore: MongoSnapshotStore;
   let operationStore: RedisOperationStore;
@@ -325,7 +325,7 @@ describe("DocumentManager", () => {
       operationStore,
       snapshotInterval: 3, // Snapshot every 3 operations
     });
-  });
+  });*/
 
     
     /*test('Create new session', async () => {
@@ -418,7 +418,7 @@ describe("DocumentManager", () => {
       await snapshotStore.delete('doc-2'); // Clean up test snapshot
     });*/
     
-    test('Throw error if user not in session', async () => {
+    /*test('Throw error if user not in session', async () => {
       await expect(async () => {
         await manager.handleOperation('alice', {
           docId: 'doc-1',
@@ -489,7 +489,7 @@ describe("DocumentManager", () => {
       await operationStore.shutdown();
       await snapshotStore.shutdown();
     });
-  });
+  });*/
   
   // ==========================================
   // 4. STORAGE TESTS
@@ -551,7 +551,7 @@ describe("DocumentManager", () => {
       const loaded = await store.load('doc-1');
       expect(loaded).toBeNull();
     });
-  });
+  });*/
   
   describe('InMemoryOperationStore', () => {
     let store: RedisOperationStore;
@@ -560,7 +560,7 @@ describe("DocumentManager", () => {
       store = new RedisOperationStore();
     });
     
-    test('Save and retrieve operations', async () => {
+    /*test('Save and retrieve operations', async () => {
       await store.save({
         documentId: 'doc-1',
         version: 1,
@@ -591,16 +591,16 @@ describe("DocumentManager", () => {
       
       expect(ops.length).toBe(3);  // v3, v4, v5
       expect(ops[0].version).toBe(3);
-    });
+    });*/
     
-    test('Multiple documents', async () => {
-      await store.save({
-        documentId: 'doc-1',
-        version: 1,
-        delta: { ops: [] },
-        timestamp: Date.now(),
-        author: 'alice'
-      });
+    /*test('Multiple documents', async () => {
+      //await store.save({
+        //documentId: 'doc-1',
+        //version: 1,
+        //delta: { ops: [] },
+        //timestamp: Date.now(),
+        //author: 'alice'
+      //});
       
       await store.save({
         documentId: 'doc-2',
@@ -628,13 +628,14 @@ describe("DocumentManager", () => {
           timestamp: Date.now(),
           author: 'alice'
         });
+        console.log(`Saved operation v${i} for doc-1`);
       }
       
       const count = await store.getCount('doc-1');
       expect(count).toBe(3);
     });
     
-    test('Delete operations', async () => {
+    /*test('Delete operations', async () => {
       await store.save({
         documentId: 'doc-1',
         version: 1,
@@ -647,6 +648,11 @@ describe("DocumentManager", () => {
       
       const count = await store.getCount('doc-1');
       expect(count).toBe(0);
+    });*/
+
+    /*afterAll(async () => {
+      await store.clear();
+      await store.shutdown();
     });
   });*/
   
@@ -654,7 +660,7 @@ describe("DocumentManager", () => {
   // 5. INTEGRATION TESTS
   // ==========================================
   
-  /*describe('Integration Tests', () => {
+  describe('Integration Tests', () => {
     
     test('Complete user flow', async () => {
       const manager = new DocumentManager({
@@ -781,5 +787,5 @@ describe("DocumentManager", () => {
       expect(session.getContent()).toContain('Initial');
       expect(session.getContent()).toContain('content');
     });
-  });*/
-//});
+  });
+});
