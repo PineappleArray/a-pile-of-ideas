@@ -1,4 +1,4 @@
-import { Delta, DeltaOp, normalizeDelta } from '../../delta/deltaUtil'; // adjust import path
+import { Delta, DeltaOp, normalizeDelta } from '../../delta/delta'; // adjust import path
 
 export function transform(deltaA: Delta, deltaB: Delta, priority: 'left' | 'right' = 'right'): Delta {
   const result: DeltaOp[] = [];

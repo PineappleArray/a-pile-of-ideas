@@ -1,4 +1,4 @@
-import { Delta } from './deltaUtil';
+import { Delta } from './delta';
 
 export class DeltaFactory {
   static insert(pos: number, text: string): Delta {

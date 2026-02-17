@@ -1,4 +1,4 @@
-import { Delta, DeltaMessage, Version, normalizeDelta, DeltaOp } from '../../delta/deltaUtil'; // adjust path
+import { Delta, DeltaMessage, Version, normalizeDelta, DeltaOp } from '../../delta/delta'; // adjust path
 import { transform, apply, compose, transformAgainstSequence } from '../ot/operationalTransformation';
 import { ClientConnection } from '../ws/clientConnection';
 import { IClientConnection } from '../ws/IClient';

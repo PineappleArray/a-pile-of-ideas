@@ -5,7 +5,7 @@
 */
 
 import Redis from "ioredis";
-import { Delta } from "../../delta/deltaUtil"
+import { Delta } from "../../delta/delta"
 
 export interface StoredOperation {
   documentId: string;

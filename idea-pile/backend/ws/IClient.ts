@@ -2,7 +2,7 @@
  * IClientConnection.ts
  */
 
-import { Delta } from '../../delta/deltaUtil';
+import { Delta } from '../../delta/delta';
 
 export interface IClientConnection {
   setUserId(userId: string): void;

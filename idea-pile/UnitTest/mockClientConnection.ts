@@ -6,7 +6,7 @@
  */
 
 import { IClientConnection } from '@/backend/ws/IClient';
-import { Delta } from '../delta/deltaUtil';
+import { Delta } from '../delta/delta';
 
 export class MockClientConnection implements IClientConnection{
   public messages: any[] = [];

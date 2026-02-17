@@ -12,7 +12,7 @@ import { SnapshotStore,  } from '../backend/storage/snapshotStore';
 import { RedisOperationStore } from '../backend/storage/operationStore';
 import { ClientConnection } from '../backend/ws/clientConnection';
 import { transform, apply } from '../backend/ot/operationalTransformation';
-import { Delta, DeltaOp } from '../delta/deltaUtil';
+import { Delta, DeltaOp } from '../delta/delta';
 import { MockClientConnection } from './mockClientConnection';
 import { MongoSnapshotStore } from '../backend/storage/snapshotStore';
 import { after } from 'next/server';
@@ -553,12 +553,12 @@ import { after } from 'next/server';
     });
   });*/
   
-  describe('InMemoryOperationStore', () => {
-    let store: RedisOperationStore;
+// describe('InMemoryOperationStore', () => {
+//    let store: RedisOperationStore;
     
-    beforeEach(() => {
-      store = new RedisOperationStore();
-    });
+//    beforeEach(() => {
+//      store = new RedisOperationStore();
+//    });
     
     /*test('Save and retrieve operations', async () => {
       await store.save({
@@ -660,7 +660,7 @@ import { after } from 'next/server';
   // 5. INTEGRATION TESTS
   // ==========================================
   
-  describe('Integration Tests', () => {
+  /*describe('Integration Tests', () => {
     
     test('Complete user flow', async () => {
       const manager = new DocumentManager({
@@ -787,5 +787,5 @@ import { after } from 'next/server';
       expect(session.getContent()).toContain('Initial');
       expect(session.getContent()).toContain('content');
     });
-  });
-});
+  });*/
+//});

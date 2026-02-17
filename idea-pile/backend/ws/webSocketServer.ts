@@ -1,7 +1,7 @@
 //Represents a single WebSocket connection to a client
 
 import { WebSocket } from 'ws';
-import { Delta } from '../../delta/deltaUtil';
+import { Delta } from '../../delta/delta';
 
 export class ClientConnection {
   private ws: WebSocket;

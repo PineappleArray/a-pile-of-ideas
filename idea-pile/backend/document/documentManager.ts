@@ -14,7 +14,7 @@ import { IClientConnection } from '../ws/IClient';
 import { OperationStore } from '../storage/operationStore';
 import { SnapshotStore } from '../storage/snapshotStore';
 import { start } from 'repl';
-import { Delta, DeltaMessage } from '../../delta/deltaUtil'
+import { Delta, DeltaMessage } from '../../delta/delta'
 import { Session } from 'inspector/promises';
 
 export interface DocumentManagerConfig {
