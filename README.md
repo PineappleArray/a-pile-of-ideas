@@ -32,7 +32,7 @@ BACKEND:
 The backend is hosted on Docker and is single threaded as multi threading would introduce race conditions and complex locking mechanisms. The single threaded event loop prevents these issues while Next.js handles concurrency naturally. The databases that are utilized are mongoDB for storing snapshots and the complete contents of a file and redis for storing user edits and temporary document logs. The reasoning behind using mongoDB for storing larger more permanent data is due to its NoSQL and document friendly nature, perfect for storing complex objects like entire files composed of multiple objects in a time and space efficient manner. The reason I chose Redis for storing edits is its quick query times, its ability to handle a high number of edits, and its auto cleanup feature, along with the benefits of being stored on RAM. The reason I chose mongoDB for storing long term data is its space efficiency over Redis and the fact crashes will cause redis to lose memeory, redis stores data in RAM, making it volatile. MongoDB provides durability through persistent disk storage. Losing operations between snapshots is an acceptable trade-off for the architectural simplicity. In addition to that, while Redis can have methods for data presistence in the event of crashes either periodic data snapshots or append only files they would only introduce unnecessary complexity. WebSockets are used to provide persistent, bidirectional communication between the frontend and backend. This approach was selected to support low latency transmission and high volumes of real time signals.
 
 File Structure:
-
+```
 idea-pile/
 ├── backend/
 │   ├── document/        # DocumentManager & DocumentSession (manages document instances)
@@ -45,7 +45,7 @@ idea-pile/
 └── app/                 # Frontend logic
     ├── tools/           # Text editing & drawing tools (WIP)
     └── models/          # Sticky note models / UI state (WIP)
-
+```
 
 
 Operation                       In Memory   MongoDB & Webhooks  Trade-off
