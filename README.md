@@ -5,7 +5,7 @@ by being fed a delta which is a list of operations stored in this manner:
 ```
 type DeltaOp = 
   | { type: 'retain'; count: number }
-  | { type: 'insert'; text: string; attributes?: Record<string, any> }
+  | { type: 'insert'; text: string }
   | { type: 'delete'; count: number };
 ```
 In the occurance of multiple simultaneous edits the edits will be transformed against each other in a predetermined order before being executed on the document.
