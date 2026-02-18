@@ -41,7 +41,7 @@ export class DocumentSession {
 
   //adds a user to the document and then informs the others of the user being added
   public addUser(userId: string, connection: IClientConnection): void {
-    console.log("ADDED: -" + userId + "-");
+    //console.log("ADDED: -" + userId + "-");
     
     this.users.set(userId, {
       connection, 
@@ -98,7 +98,7 @@ export class DocumentSession {
       return null;
     }
     
-    console.log('Transformed delta:', transformed);
+    //console.log('Transformed delta:', transformed);
     
     this.content = apply(this.content, transformed);
 

@@ -1,45 +1,16 @@
 import { DocumentManager } from '../backend/document/documentManager';
-import { MongoSnapshotStore, SnapshotStore } from '../backend/storage/snapshotStore';
+import { MongoSnapshotStore } from '../backend/storage/snapshotStore';
 import { IClientConnection } from '../backend/ws/IClient';
 import { DeltaMessage } from '../delta/delta';
 import { MockClientConnection } from './mockClientConnection';
-
-// In-memory snapshot store for testing without MongoDB
-class InMemorySnapshotStore implements SnapshotStore {
-  private snapshots: Map<string, { content: string; version: number; timestamp: number }> = new Map();
-
-  async save(documentId: string, snapshot: { content: string; version: number; timestamp: number }): Promise<void> {
-    this.snapshots.set(documentId, snapshot);
-  }
-
-  async load(documentId: string): Promise<{ content: string; version: number; timestamp: number } | null> {
-    return this.snapshots.get(documentId) || null;
-  }
-
-  async delete(documentId: string): Promise<void> {
-    this.snapshots.delete(documentId);
-  }
-
-  async clear(): Promise<void> {
-    this.snapshots.clear();
-  }
-
-  async dropDatabase(): Promise<void> {
-    this.snapshots.clear();
-  }
-
-  async shutdown(): Promise<void> {
-    // No-op
-  }
-}
 
 describe('DocumentManager', () => {
   let manager: DocumentManager;
   let snapshotStore: MongoSnapshotStore;
 
   beforeAll(async () => {
-    // Use in-memory snapshot store for testing
-    snapshotStore = new InMemorySnapshotStore();
+    // Use MongoDB snapshot store for testing
+    snapshotStore = await MongoSnapshotStore.create();
   });
 
   beforeEach(async () => {

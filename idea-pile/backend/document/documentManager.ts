@@ -53,7 +53,7 @@ export class DocumentManager {
   //get or create a document session
   public async getOrCreateSession(documentId: string, initialContent?: string): Promise<DocumentSession> {
     if(this.sessions.has(documentId)){
-      console.log("HAS DOCUMENT")
+      //console.log("HAS DOCUMENT")
       return this.sessions.get(documentId)!;
     } else {
       let content = initialContent || '';
@@ -61,7 +61,7 @@ export class DocumentManager {
           const snap = await this.config.snapshotStore.load(documentId);
           if(snap){
             content = snap.content; 
-            console.log(`Loaded snapshot for ${documentId}`);
+            //console.log(`Loaded snapshot for ${documentId}`);
           }
       }
       const session = new DocumentSession(documentId, content);
@@ -111,7 +111,7 @@ public async handleOperation(userId: string, message: DeltaMessage): Promise<{ v
       result.version % this.config.snapshotInterval === 0) {
     await this.saveSnapshot(documentId, session);   //js is single threaded so no need for locks
   }
-  console.log(`Handled operation for user ${userId} on document ${documentId}, new delta: ${result?.delta.ops}`);
+  //console.log(`Handled operation for user ${userId} on document ${documentId}, new delta: ${result?.delta.ops}`);
   return result;
 }
 
