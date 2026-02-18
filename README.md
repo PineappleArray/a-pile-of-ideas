@@ -34,21 +34,18 @@ The backend is hosted on Docker and is single threaded as multi threading would 
 File Structure:
 
 idea-pile/
-
 ├── backend/
-│   ├── document/        # DocumentManager & DocumentSession (Manages all the doc instances)
-│   ├── ot/              # Operation Transformers (Manages OT logic)
-│   ├── storage/         # Storage (Redis short term storage and MongoDB persistent storage)
-
+│   ├── document/        # DocumentManager & DocumentSession (manages document instances)
+│   ├── ot/              # Operation Transformers (OT logic)
+│   ├── storage/         # Redis (short-term) & MongoDB (persistent)
 │   └── ws/              # WebSocket handling and client connections
+│
+├── delta/               # Universal delta structure (shared frontend/backend)
+│
+└── app/                 # Frontend logic
+    ├── tools/           # Text editing & drawing tools (WIP)
+    └── models/          # Sticky note models / UI state (WIP)
 
-├── delta/               # Universal delta structure used by both front and backend
-
-└── app/                 # Contains all the frontend logic
-
-    ├── tools/           # Tools that handle all the text editing and drawing (WIP)
-
-    ├── models/          # All the classes that represent the frontend sticky notes (WIP)
 
 
 Operation                       In Memory   MongoDB & Webhooks  Trade-off
