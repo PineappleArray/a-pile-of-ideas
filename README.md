@@ -34,22 +34,35 @@ The backend is hosted on Docker and is single threaded as multi threading would 
 File Structure:
 
 idea-pile/
+
 ├── backend/
 │   ├── document/        # DocumentManager & DocumentSession (Manages all the doc instances)
+
 │   ├── ot/              # Operation Transformers (Manages OT logic)
+
 │   ├── storage/         # Storage (Redis short term storage and MongoDB persistent storage)
+
 │   └── ws/              # WebSocket handling and client connections
+
 ├── delta/               # Universal delta structure used by both front and backend
+
 └── app/                 # Contains all the frontend logic
+
     ├── tools/           # Tools that handle all the text editing and drawing (WIP)
+
     ├── models/          # All the classes that represent the frontend sticky notes (WIP)
 
 
 Operation                       In Memory   MongoDB & Webhooks  Trade-off
+
 Session Creation (100 sessions) 0.18 ms     0.20 ms             1.1x
+
 Document Operations (1000 ops)  3.83 ms     878.54 ms           229x
+
 Broadcasting (50 users)         0.11 ms     0.12 ms             1.1x
+
 Snapshot Loading (50 loads)     0.25 ms     3.56 ms             14.5x
+
 User Join/Leave (200 users)     3.73 ms     21.95 ms            5.9x
 
 Note: These are under test conditions on servers hosted on Dockers for consistency with in memory being a Redis server and map for snapshot storage, while MongoDB and Webhooks are comprised of a Redis and MongoDB server.
