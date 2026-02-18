@@ -37,9 +37,7 @@ idea-pile/
 
 ├── backend/
 │   ├── document/        # DocumentManager & DocumentSession (Manages all the doc instances)
-
 │   ├── ot/              # Operation Transformers (Manages OT logic)
-
 │   ├── storage/         # Storage (Redis short term storage and MongoDB persistent storage)
 
 │   └── ws/              # WebSocket handling and client connections
