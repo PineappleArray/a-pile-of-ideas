@@ -48,13 +48,9 @@ idea-pile/
 Operation                       In Memory   MongoDB & Webhooks  Trade-off
 
 Session Creation (100 sessions) 0.18 ms     0.20 ms             1.1x
-
 Document Operations (1000 ops)  3.83 ms     878.54 ms           229x
-
 Broadcasting (50 users)         0.11 ms     0.12 ms             1.1x
-
 Snapshot Loading (50 loads)     0.25 ms     3.56 ms             14.5x
-
 User Join/Leave (200 users)     3.73 ms     21.95 ms            5.9x
 ```
 
