@@ -44,24 +44,12 @@ idea-pile/
     ├── tools/           # Tools that handle all the text editing and drawing (WIP)
     ├── models/          # All the classes that represent the frontend sticky notes (WIP)
 
-Benchmark times:
 
-| Benchmark | Throughput |
-|-----------|------------|
-| Session Creation | 25,000/sec |
-| Operation Handling | 804/sec |
-| Broadcasting | 714/sec |
-| Snapshot Loading | 1,724/sec |
-| User Join/Leave | 787/sec |
+Operation                       In Memory   MongoDB & Webhooks  Trade-off
+Session Creation (100 sessions) 0.18 ms     0.20 ms             1.1x
+Document Operations (1000 ops)  3.83 ms     878.54 ms           229x
+Broadcasting (50 users)         0.11 ms     0.12 ms             1.1x
+Snapshot Loading (50 loads)     0.25 ms     3.56 ms             14.5x
+User Join/Leave (200 users)     3.73 ms     21.95 ms            5.9x
 
-Latency
-
-| Operation | Time |
-|-----------|------|
-| Session Creation | 0.04ms |
-| Operation Processing | 1.24ms |
-| Broadcast per User | 1.4ms |
-| Snapshot Load | 0.58ms |
-| Join/Leave Cycle | 1.27ms |
-
-Note: These are under test conditions on servers hosted on Dockers and are using a inMemoryStorage for consistency and a Redis server
+Note: These are under test conditions on servers hosted on Dockers for consistency with in memory being a Redis server and map for snapshot storage, while MongoDB and Webhooks are comprised of a Redis and MongoDB server.
