@@ -23,7 +23,7 @@ to reduce network traffic, React.memo for collaboration indicators to avoid
 unnecessary re-renders, and virtual scrolling for large documents.
 
 BACKEND:
-The backend is hosted on Docker and is single threaded as multi threading would introduce race conditions and complex locking mechanisms. The single threaded event loop prevents these issues while Next.js handles concurrency naturally. The databases that are utilized are mongoDB for storing snapshots and the complete contents of a file and Redis for storing user edits and temporary document logs. The reasoning behind using mongoDB for storing larger more permanent data is due to its NoSQL and document friendly nature, perfect for storing complex objects like entire files composed of multiple objects in a time and space efficient manner. The reason I chose Redis for storing edits is its quick query times, its ability to handle a high number of edits, and its auto cleanup feature, along with the benefits of being stored on RAM. The reason I chose mongoDB for storing long term data is its space efficiency over Redis and the fact crashes will cause Redis to lose memory, Redis stores data in RAM, making it volatile. MongoDB provides durability through persistent disk storage. Losing operations between snapshots is an acceptable trade-off for the architectural simplicity. In addition to that, while Redis can have methods for data presistence in the event of crashes either periodic data snapshots or append only files they would only introduce unnecessary complexity. WebSockets are used to provide persistent, bidirectional communication between the frontend and backend. This approach was selected to support low latency transmission and high volumes of real time signals.
+The backend is hosted on Docker and is single threaded as multi threading would introduce race conditions and complex locking mechanisms. The single threaded event loop prevents these issues while Next.js handles concurrency naturally. The databases that are utilized are mongoDB for storing snapshots and the complete contents of a file and Redis for storing user edits and temporary document logs. The reasoning behind using mongoDB for storing larger more permanent data is due to its NoSQL and document friendly nature, perfect for storing complex objects like entire files composed of multiple objects in a time and space efficient manner. The reason I chose Redis for storing edits is its quick query times, its ability to handle a high number of edits, and its auto cleanup feature, along with the benefits of being stored on RAM. The reason I chose mongoDB for storing long term data is its space efficiency over Redis and the fact crashes will cause Redis to lose memory, Redis stores data in RAM, making it volatile. MongoDB provides durability through persistent disk storage. Losing operations between snapshots is an acceptable trade-off for the architectural simplicity. In addition to that, while Redis can have methods for data presistence in the event of crashes either periodic data snapshots or append only files they would only introduce unnecessary complexity. WebSockets are used to provide persistent, bidirectional communication between the frontend and backend. This approach was selected to support low latency transmission and high volumes of real time signals. The approach of utilizing WebSockets has been validated from the unit test PerformanceWSMongo, where it was shows for the most utilized operations of applying and processing operations without taking into account creating the WebSocket it is around 4x faster then using WebHooks.
 
 File Structure:
 ```
@@ -42,13 +42,13 @@ idea-pile/
 ```
 
 ```
-Operation                       In Memory   MongoDB & Webhooks  Trade-off
-
-Session Creation (100 sessions) 0.18 ms     0.20 ms             1.1x
-Document Operations (1000 ops)  3.83 ms     878.54 ms           229x
-Broadcasting (50 users)         0.11 ms     0.12 ms             1.1x
-Snapshot Loading (50 snaps)     0.25 ms     3.56 ms             14.5x
-User Join/Leave (200 users)     3.73 ms     21.95 ms            5.9x
+Operation                      In-Memory   MongoDB + Webhooks   WebSocket + MongoDB  
+Single operation apply         0.004 ms    14 ms                14 ms                 
+Real-time broadcast (50 users) 0.002 ms    N/A                  2.86 ms               
+Snapshot save (single)         N/A         15-27 ms             15-27 ms            
+Cursor update                  0.004 ms    N/A                  13 ms             
+Session recovery               N/A         16 ms                27 ms        
 ```
-
 Note: These are under test conditions on servers hosted on Docker for consistency with in memory being a Redis server and map for snapshot storage, while MongoDB and Webhooks are comprised of a Redis and MongoDB server.
+
+While it may seem that WebSockets are a sub optimal choice in terms of efficiency when subtracting the overhead required to make a connection WebSockets are around 4x faster in terms of applying operations.
