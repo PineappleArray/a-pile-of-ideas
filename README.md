@@ -52,3 +52,7 @@ Session recovery               N/A         16 ms                27 ms
 Note: These are under test conditions on servers hosted on Docker for consistency with in memory being a Redis server and map for snapshot storage, while MongoDB and Webhooks are comprised of a Redis and MongoDB server.
 
 While it may seem that WebSockets are a sub optimal choice in terms of efficiency when subtracting the overhead required to make a connection WebSockets are around 4x faster in terms of applying operations.
+
+WIP:
+Finish the frontend
+Change OT to work better on text boxes

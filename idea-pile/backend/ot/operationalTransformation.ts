@@ -1,4 +1,4 @@
-import { Delta, DeltaOp, normalizeDelta } from '../../delta/delta'; // adjust import path
+import { Delta, DeltaOp, normalizeDelta } from '../../delta/delta'; 
 
 export function transform(deltaA: Delta, deltaB: Delta, priority: 'left' | 'right' = 'right'): Delta {
   const result: DeltaOp[] = [];
@@ -7,7 +7,7 @@ export function transform(deltaA: Delta, deltaB: Delta, priority: 'left' | 'righ
   const opsA = deltaA.ops;
   const opsB = deltaB.ops;
   
-  // Helper to copy operation
+  //helper to copy operation
   function copyOp(op: DeltaOp): DeltaOp {
     if (op.type === 'insert') {
       return { ...op };
@@ -20,7 +20,7 @@ export function transform(deltaA: Delta, deltaB: Delta, priority: 'left' | 'righ
   let currentB: DeltaOp | null = j < opsB.length ? copyOp(opsB[j]) : null;
   
   while (currentA || currentB) {
-    // Only B remains
+    //just B remains
     if (!currentA) {
       if (currentB && currentB!.type === 'insert') {
         result.push({ type: 'retain', count: currentB.text.length });
@@ -30,7 +30,7 @@ export function transform(deltaA: Delta, deltaB: Delta, priority: 'left' | 'righ
       continue;
     }
     
-    // Only A remains
+    //just A remains
     if (!currentB) {
       result.push(currentA);
       i++;
@@ -38,7 +38,7 @@ export function transform(deltaA: Delta, deltaB: Delta, priority: 'left' | 'righ
       continue;
     }
     
-    // Both present
+    //both present
     if (currentA.type === 'insert') {
       if (currentB.type === 'insert') {
         if (priority === 'left') {
@@ -118,7 +118,7 @@ export function transform(deltaA: Delta, deltaB: Delta, priority: 'left' | 'righ
         
         if (currentA.count === 0) {
           i++;
-          currentA = i < opsA.length ? copyOp(opsA[i]) : null;
+          currentA = i < opsA.length ? copyOp(opsA[i]) : null; //important to copy the op here to avoid mutating the original delta
         }
         if (currentB.count === 0) {
           j++;
@@ -158,13 +158,13 @@ export function compose(deltaA: Delta, deltaB: Delta): Delta {
       continue;
     }
     
-    // B inserts
+    //B inserts
     if (opB.type === 'insert') {
       result.push(opB);
       j++;
     }
     
-    // A inserts, B retains
+    //A inserts, B retains
     else if (opA.type === 'insert' && opB.type === 'retain') {
       const minLen = Math.min(opA.text.length - offsetA, opB.count - offsetB);
       result.push({
@@ -186,7 +186,7 @@ export function compose(deltaA: Delta, deltaB: Delta): Delta {
       }
     }
     
-    // A inserts, B deletes
+    //A inserts, B deletes
     else if (opA.type === 'insert' && opB.type === 'delete') {
       const minLen = Math.min(opA.text.length - offsetA, opB.count - offsetB);
       
@@ -203,7 +203,7 @@ export function compose(deltaA: Delta, deltaB: Delta): Delta {
       }
     }
     
-    // A retains, B retains
+    //A retains, B retains
     else if (opA.type === 'retain' && opB.type === 'retain') {
       const minLen = Math.min(opA.count - offsetA, opB.count - offsetB);
       result.push({ type: 'retain', count: minLen });
@@ -221,7 +221,7 @@ export function compose(deltaA: Delta, deltaB: Delta): Delta {
       }
     }
     
-    // A retains, B deletes
+    //A retains, B deletes
     else if (opA.type === 'retain' && opB.type === 'delete') {
       const minLen = Math.min(opA.count - offsetA, opB.count - offsetB);
       result.push({ type: 'delete', count: minLen });
@@ -239,7 +239,7 @@ export function compose(deltaA: Delta, deltaB: Delta): Delta {
       }
     }
     
-    // A deletes
+    //A deletes
     else if (opA.type === 'delete') {
       result.push(opA);
       i++;
