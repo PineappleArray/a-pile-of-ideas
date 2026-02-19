@@ -51,4 +51,4 @@ Snapshot Loading (50 snaps)     0.25 ms     3.56 ms             14.5x
 User Join/Leave (200 users)     3.73 ms     21.95 ms            5.9x
 ```
 
-Note: These are under test conditions on servers hosted on Dockers for consistency with in memory being a Redis server and map for snapshot storage, while MongoDB and Webhooks are comprised of a Redis and MongoDB server.
+Note: These are under test conditions on servers hosted on Docker for consistency with in memory being a Redis server and map for snapshot storage, while MongoDB and Webhooks are comprised of a Redis and MongoDB server.
