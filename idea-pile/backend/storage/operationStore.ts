@@ -10,11 +10,12 @@ import { Delta } from "../../delta/delta"
 export interface StoredOperation {
   documentId: string;
   version: number;
-  delta: Delta;  // The actual operation/delta
+  delta: Delta;  //the actual operation/delta
   timestamp: number;
   author: string; //userId
 }
 
+//interface for InMemory testing
 export interface OperationStore {
   save(operation: StoredOperation): Promise<void>;
   getOperationsSince(documentId: string, sinceVersion: number): Promise<StoredOperation[]>;
@@ -25,6 +26,7 @@ export interface OperationStore {
 export class RedisOperationStore implements OperationStore {
   private redis: Redis;
   
+  //initializes the Redis client with connection settings, using environment variables for configuration and defaulting to localhost and port 6379
   constructor() {
     this.redis = new Redis({
       host: process.env.REDIS_HOST || 'localhost',  
@@ -86,6 +88,7 @@ export class RedisOperationStore implements OperationStore {
     return await this.redis.llen(key); 
   }
 
+  //closes redis connection and is used for cleanup after tests
   async shutdown(): Promise<void> {
     await this.redis.quit();
   }
@@ -103,24 +106,24 @@ export class RedisOperationStore implements OperationStore {
     await this.redis.flushdb();
   }
   
-  //Get all operations for a document (for debugging)
+  //get all operations for a document (for debugging)
   async getAll(documentId: string): Promise<StoredOperation[]> {
     return this.getOperationsSince(documentId, -1);
   }
   
-  //Check if key exists
+  //check if key exists
   async exists(documentId: string): Promise<boolean> {
     const exists = await this.redis.exists(`ops:${documentId}`);
     return exists === 1;
   }
   
-  //Get all document IDs
+  //get all document IDs
   async getAllDocumentIds(): Promise<string[]> {
     const keys = await this.redis.keys('ops:*');
     return keys.map(key => key.replace('ops:', ''));
   }
   
-  //Get stats for debugging
+  //get stats for debugging
   async getStats(): Promise<{ totalKeys: number; totalOperations: number }> {
     const keys = await this.redis.keys('ops:*');
     let totalOperations = 0;

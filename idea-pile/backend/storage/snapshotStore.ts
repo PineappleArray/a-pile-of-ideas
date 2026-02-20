@@ -1,18 +1,20 @@
 import { MongoClient, Collection, Db } from "mongodb";
 
+//this will be the structure of the snapshot
 export interface Snapshot {
   content: string;
   version: number;
   timestamp: number;
 }
 
+//interface that is implemented by mongo snapshot store, defines the methods for saving, loading and deleting snapshots
 export interface SnapshotStore {
   save(documentId: string, snapshot: Snapshot): Promise<void>;
   load(documentId: string): Promise<Snapshot | null>;
   delete(documentId: string): Promise<void>;
 }
 
-//MongoDB document structure
+//mongoDB document structure
 interface SnapshotDocument {
   documentId: string;
   content: string;
@@ -21,6 +23,7 @@ interface SnapshotDocument {
   updatedAt: Date;
 }
 
+//implementation of the snapshot store using MongoDB, provides methods for saving, loading and deleting snapshots, as well as additional methods for managing the database and collection
 export class MongoSnapshotStore implements SnapshotStore {
   private client!: MongoClient;
   private db!: Db; 
@@ -36,6 +39,7 @@ export class MongoSnapshotStore implements SnapshotStore {
     return store;
   }
 
+  //initializes the connection to the MongoDB database and sets up the collection and indexes
   private async init(mongoUrl: string, dbName: string): Promise<void> {
     this.client = new MongoClient(mongoUrl);
     await this.client.connect();
@@ -46,6 +50,7 @@ export class MongoSnapshotStore implements SnapshotStore {
     await this.createIndexes();
   }
 
+  //creates indexes on the documentId and updatedAt fields to optimize query performance
   private async createIndexes(): Promise<void> {
     try {
       await this.collection.createIndex({ documentId: 1 }, { unique: true });
@@ -55,6 +60,7 @@ export class MongoSnapshotStore implements SnapshotStore {
     }
   }
 
+  //saves a snapshot to the database, using upsert to insert or update the document based on the documentId
   async save(documentId: string, snapshot: Snapshot): Promise<void> {
     await this.collection.updateOne(
       { documentId },
@@ -71,10 +77,14 @@ export class MongoSnapshotStore implements SnapshotStore {
     );
   }
 
+  //loads a snapshot from the database based on the documentId, returns null if no document is found
   async load(documentId: string): Promise<Snapshot | null> {
     const doc = await this.collection.findOne({ documentId });
-    if (!doc) return null;
+    if (!doc){
+      return null;
+    }
 
+    //returns the snapshot content in the form of a snapshot interface, version and timestamp from the document
     return {
       content: doc.content,
       version: doc.version,
@@ -86,6 +96,7 @@ export class MongoSnapshotStore implements SnapshotStore {
     await this.collection.deleteOne({ documentId });
   }
 
+  //deletes all documents in the collection, effectively clearing the snapshot store
   async clear(): Promise<void> {
     await this.collection.deleteMany({});
   }
@@ -94,8 +105,8 @@ export class MongoSnapshotStore implements SnapshotStore {
     try {
       await this.collection.drop();
     } catch (error: any) {
-      // Ignore error if collection doesn't exist
-      if (error.code !== 26) {  // 26 = NamespaceNotFound
+      //ignore error if collection doesn't exist
+      if (error.code !== 26) {  //26 = NamespaceNotFound
         throw error;
       }
     }
