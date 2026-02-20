@@ -312,8 +312,12 @@ export function transformAgainstSequence(delta: Delta, deltas: Delta[]): Delta {
 
 //check if a delta has no ops
 export function isNoop(delta: Delta): boolean {
-  return delta.ops.length === 0 || 
-    (delta.ops.length === 1 && delta.ops[0].type === 'retain');
+  if (delta.ops.length === 0) {
+    return true;
+  } else if (delta.ops.length === 1 && delta.ops[0].type === 'retain') {
+    return true;
+  }
+  return false;
 }
 
 //get the length change caused by a delta
