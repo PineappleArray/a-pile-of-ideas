@@ -1,4 +1,4 @@
-import { Delta, DeltaOp, normalizeDelta } from '../../delta/delta'; 
+import { Delta, DeltaOp, normalizeDelta, Transform } from '../../delta/delta'; 
 
 export function transform(deltaA: Delta, deltaB: Delta, priority: 'left' | 'right' = 'right'): Delta {
   const result: DeltaOp[] = [];
@@ -275,6 +275,21 @@ export function apply(text: string, delta: Delta): string {
   return result;
 }
 
+export function applyTransform(x: number, y: number, width: number, height: number, transform: Transform): { x: number; y: number, width: number; height: number } {
+  const ops = transform.ops;
+
+  for (const op of ops) {
+    if (op.type === 'move') {
+      x += op.dx;
+      y += op.dy;
+    } else if (op.type === 'resize') {
+      width += op.dw;
+      height += op.dh;
+    }
+  }
+  return { x: x, y: y , width: width, height: height};
+}
+
 //invert a delta (for undo functionality)
 export function invert(delta: Delta, baseText: string): Delta {
   const ops: DeltaOp[] = [];
@@ -369,3 +384,5 @@ export function positionToDelta(
   
   return normalizeDelta({ ops });
 }
+
+//These will be the transform functions

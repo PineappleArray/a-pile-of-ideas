@@ -1,4 +1,4 @@
-import { Delta, DeltaMessage, Version, normalizeDelta, DeltaOp } from '../../delta/delta'; // adjust path
+import { Delta, DeltaMessage, Version, normalizeDelta, DeltaOp, Message, TransformMessage, Transform, TransformOp, normalizeTransform } from '../../delta/delta'; // adjust path
 import { transform, apply, compose, transformAgainstSequence } from '../ot/operationalTransformation';
 import { ClientConnection } from '../ws/clientConnection';
 import { IClientConnection } from '../ws/IClient';
@@ -79,8 +79,18 @@ export class DocumentSession {
     return this.users.size === 0;
   }
 
+  private moveSticky(move: TransformMessage): void {
+    if (!this.content[move.stickyId]) {
+      throw new Error("INVALID STICKY ID");
+    } else { 
+      const normalized = normalizeTransform({ ops: move.ops });
+      const baseContent = this.content[move.stickyId];
+      
+    }
+  }
+
   //apply a delta operation from a client
-  public applyDelta(userId: string, message: DeltaMessage): { version: number; delta: Delta } | null {
+  public applyDelta(userId: string, message: Message): { version: number; delta: Delta } | null {
     const user = this.users.get(userId);
 
     if (!user) {
@@ -91,46 +101,47 @@ export class DocumentSession {
       throw new Error("INVALID STICKY ID");
     }
 
-    const baseContent = this.content[message.stickyId];
+    if (message.type === 'delta') {
+      const baseContent = !this.content[message.stickyId] ? '' : this.content[message.stickyId];
 
-    if(!baseContent){
-      throw new Error("MISSING CONTENT FOR STICKY ID");
-    }
+      //normalize the incoming delta
+      const delta = normalizeDelta({ops: message.ops});
+    
+      //transform against any operations that happened after user's base version
+      const transformed = this.transformDelta(delta, message.baseVersion, this.version);
+    
+      if (!transformed) {
+        console.error('Transformation failed');
+        return null;
+      }
+    
+      //console.log('Transformed delta:', transformed);
+    
+      this.content[message.stickyId] = apply(baseContent, transformed);
 
-    //normalize the incoming delta
-    const delta = normalizeDelta({ops: message.ops});
+      this.version++;
     
-    //transform against any operations that happened after user's base version
-    const transformed = this.transformDelta(delta, message.baseVersion, this.version);
+      this.deltaHistory.push({
+        delta: transformed,
+        version: this.version,
+        author: userId,
+        timestamp: Date.now()
+      });
     
-    if (!transformed) {
-      console.error('Transformation failed');
-      return null;
-    }
+      user.version = this.version;
     
-    //console.log('Transformed delta:', transformed);
+      this.broadcastDelta(transformed, this.version, userId);
     
-    this.content[message.stickyId] = apply(baseContent, transformed);
+      //trim history if needed
+      if (this.deltaHistory.length > this.maxHistorySize) {
+        this.trimHistory();
+      }
+    
+      return {version: this.version, delta: transformed};
+    } else {
 
-    this.version++;
-    
-    this.deltaHistory.push({
-      delta: transformed,
-      version: this.version,
-      author: userId,
-      timestamp: Date.now()
-    });
-    
-    user.version = this.version;
-    
-    this.broadcastDelta(transformed, this.version, userId);
-    
-    //trim history if needed
-    if (this.deltaHistory.length > this.maxHistorySize) {
-      this.trimHistory();
+      throw new Error("INVALID MESSAGE TYPE");
     }
-    
-    return {version: this.version, delta: transformed};
   }
 
   //transform a delta against operations in history

@@ -9,13 +9,6 @@ export type DeltaOp =
   | { type: 'insert'; text: string; attributes?: Record<string, any> }
   | { type: 'delete'; count: number };
 
-export type Move = {
-  type: 'move';
-  dx: number;  //percentage of the total width of the textbox that its located
-  dy: number;
-  id: string; //id of the textbox that is being moved 
-}
-
 //these are the operations that are executed on the textbox
 export type TransformOp =
   | { type: 'move'; dx: number; dy: number } //dx and dy is relative due to intent overriding
@@ -54,13 +47,25 @@ export interface VersionStore {
   snapshotInterval: number;
 }
 
-//a edit on a document
-export interface DeltaMessage {
-  docId: string;
-  stickyId: string; //a unique id for this edit that is used to track it across the system
+export interface BaseMessage {
+  docId: string; //a unique id for this edit that is used to track it across the system
+  stickyId: string;
   baseVersion: number;
+  type: string;
+}
+
+//a edit on a sticky note in doc
+export interface DeltaMessage extends BaseMessage {
+  type: 'delta';
   ops: DeltaOp[];
 }
+
+export interface TransformMessage extends BaseMessage {
+  type: 'transform';
+  ops: TransformOp[];
+}
+
+export type Message = DeltaMessage | TransformMessage;
 
 //merges multiple edits if they are the same type
 //to save space
