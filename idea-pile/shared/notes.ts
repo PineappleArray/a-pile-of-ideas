@@ -1,21 +1,15 @@
-import Data from './data'; // adjust the import path as needed
-
-export class text extends Data {
-
-    fontSize: number; 
-    color: string; 
-    align: "left" | "center" | "right"; // text alignment
+export class stickyNote {
     box_width: number;
     box_height: number;   
     text: string;
+    centerX: number;
+    centerY: number
+    id: string;
 
     constructor(x: number, y: number, id: string, text: string, screen_width: number, screen_height: number, box_height: number, box_width: number){
-        super(x, y, id, screen_width, screen_height);
-
-        this.fontSize = 16;
-        this.color = "#000000";
-        this.align = "left";
-
+        this.centerX = x;
+        this.centerY = y;
+        this.id = id;
         this.box_height = box_height;
         this.box_width = box_width;
         this.text = text
@@ -30,9 +24,8 @@ export class text extends Data {
     }
 
     print(): void {
-        super.print();
         console.log(this.text);
     }
 }
 
-export default text;
+export default stickyNote;

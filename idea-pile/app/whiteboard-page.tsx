@@ -3,7 +3,7 @@ import { PenTool, FileText, Users, Lightbulb } from 'lucide-react';
 import ToolBar from './toolbar';
 import React from 'react';
 import ToolClass from './tools/tools';
-import { text } from '../models/text'
+import { text } from '../shared/notes'
 export default function WhiteboardPage() {
     const symbols = [
         {

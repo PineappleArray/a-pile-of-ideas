@@ -1,3 +1,4 @@
+import stickyNote from '@/shared/notes';
 import { Delta, DeltaOp, normalizeDelta, Transform } from '../../delta/delta'; 
 
 export function transform(deltaA: Delta, deltaB: Delta, priority: 'left' | 'right' = 'right'): Delta {
@@ -275,8 +276,12 @@ export function apply(text: string, delta: Delta): string {
   return result;
 }
 
-export function applyTransform(x: number, y: number, width: number, height: number, transform: Transform): { x: number; y: number, width: number; height: number } {
+export function applyTransform(note: stickyNote, transform: Transform): stickyNote {
   const ops = transform.ops;
+  let x = note.centerX;
+  let y = note.centerY;
+  let width = note.box_width;
+  let height = note.box_height;
 
   for (const op of ops) {
     if (op.type === 'move') {
@@ -287,7 +292,7 @@ export function applyTransform(x: number, y: number, width: number, height: numb
       height += op.dh;
     }
   }
-  return { x: x, y: y , width: width, height: height};
+  return note;
 }
 
 //invert a delta (for undo functionality)

@@ -33,7 +33,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "models/mongodb.js",
+    "shared/mongodb.js",
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [

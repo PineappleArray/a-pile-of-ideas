@@ -1,5 +1,6 @@
+import stickyNote from '@/shared/notes';
 import { Delta, DeltaMessage, Version, normalizeDelta, DeltaOp, Message, TransformMessage, Transform, TransformOp, normalizeTransform } from '../../delta/delta'; // adjust path
-import { transform, apply, compose, transformAgainstSequence } from '../ot/operationalTransformation';
+import { transform, apply, compose, transformAgainstSequence, applyTransform } from '../ot/operationalTransformation';
 import { ClientConnection } from '../ws/clientConnection';
 import { IClientConnection } from '../ws/IClient';
 
@@ -23,14 +24,14 @@ export interface HistoricalDelta {
 
 export class DocumentSession {
   private documentId: string;
-  private content: Record<string, string>;
+  private content: Record<string, stickyNote>;
   private version: number;
-  private users: Map<string, User>;
+  private users: Map<string, User>; 
   private deltaHistory: HistoricalDelta[];
   private maxHistorySize: number;
 
   //Makes a base document from the id and the content
-  constructor(documentId: string, initialContent: Record<string, string> = {}) {
+  constructor(documentId: string, initialContent: Record<string, stickyNote> = {}) {
     this.documentId = documentId;
     this.version = 0;
     this.users = new Map();
@@ -84,7 +85,7 @@ export class DocumentSession {
       throw new Error("INVALID STICKY ID");
     } else { 
       const normalized = normalizeTransform({ ops: move.ops });
-      const baseContent = this.content[move.stickyId];
+      const movedContent = applyTransform(this.content[move.stickyId], normalized);
       
     }
   }
@@ -102,7 +103,7 @@ export class DocumentSession {
     }
 
     if (message.type === 'delta') {
-      const baseContent = !this.content[message.stickyId] ? '' : this.content[message.stickyId];
+      const baseContent = !this.content[message.stickyId] ? '' : this.content[message.stickyId].text;
 
       //normalize the incoming delta
       const delta = normalizeDelta({ops: message.ops});
@@ -117,7 +118,8 @@ export class DocumentSession {
     
       //console.log('Transformed delta:', transformed);
     
-      this.content[message.stickyId] = apply(baseContent, transformed);
+      this.content[message.stickyId].editText(apply(baseContent, transformed));
+ 
 
       this.version++;
     
@@ -256,7 +258,7 @@ export class DocumentSession {
   }
 
   //returns content
-  public getContent(): Record<string, string> {
+  public getContent(): Record<string, stickyNote> {
     return this.content;
   }
 

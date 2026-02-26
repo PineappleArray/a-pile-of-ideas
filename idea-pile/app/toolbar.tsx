@@ -6,7 +6,7 @@ import PenTool from './tools/penTool';
 import onCanvasClick from './tools/textbox';
 import { SpatialTree } from './utils/spatialtree';
 import { useEffect, useRef } from 'react';
-import { text } from '../models/text'
+import { text } from '../shared/notes'
 
 
 // TopBar.jsx
