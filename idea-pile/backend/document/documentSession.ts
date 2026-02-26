@@ -1,4 +1,4 @@
-import stickyNote from '@/shared/notes';
+import stickyNote from '../../shared/notes';
 import { Delta, DeltaMessage, Version, normalizeDelta, DeltaOp, Message, TransformMessage, Transform, TransformOp, normalizeTransform } from '../../delta/delta'; // adjust path
 import { transform, apply, compose, transformAgainstSequence, applyTransform } from '../ot/operationalTransformation';
 import { ClientConnection } from '../ws/clientConnection';

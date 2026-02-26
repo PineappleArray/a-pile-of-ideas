@@ -1,4 +1,4 @@
-import stickyNote from '@/shared/notes';
+import stickyNote from '../../shared/notes';
 import { Delta, DeltaOp, normalizeDelta, Transform } from '../../delta/delta'; 
 
 export function transform(deltaA: Delta, deltaB: Delta, priority: 'left' | 'right' = 'right'): Delta {
@@ -292,7 +292,7 @@ export function applyTransform(note: stickyNote, transform: Transform): stickyNo
       height += op.dh;
     }
   }
-  return note;
+  return new stickyNote(x, y, note.id, note.text, 0, 0, height, width);
 }
 
 //invert a delta (for undo functionality)
