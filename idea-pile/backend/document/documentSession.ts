@@ -23,14 +23,14 @@ export interface HistoricalDelta {
 
 export class DocumentSession {
   private documentId: string;
-  private content: Map<string, string>;
+  private content: Record<string, string>;
   private version: number;
   private users: Map<string, User>;
   private deltaHistory: HistoricalDelta[];
   private maxHistorySize: number;
 
   //Makes a base document from the id and the content
-  constructor(documentId: string, initialContent: Map<string, string> = new Map()) {
+  constructor(documentId: string, initialContent: Record<string, string> = {}) {
     this.documentId = documentId;
     this.version = 0;
     this.users = new Map();
@@ -87,11 +87,11 @@ export class DocumentSession {
       throw new Error("INVALID USER ID");
     }
     
-    if(!this.content.has(message.stickyId)){
+    if(!this.content[message.stickyId]){
       throw new Error("INVALID STICKY ID");
     }
 
-    const baseContent = this.content.get(message.stickyId);
+    const baseContent = this.content[message.stickyId];
 
     if(!baseContent){
       throw new Error("MISSING CONTENT FOR STICKY ID");
@@ -110,7 +110,7 @@ export class DocumentSession {
     
     //console.log('Transformed delta:', transformed);
     
-    this.content.set(message.stickyId, apply(baseContent, transformed));
+    this.content[message.stickyId] = apply(baseContent, transformed);
 
     this.version++;
     
@@ -245,7 +245,7 @@ export class DocumentSession {
   }
 
   //returns content
-  public getContent(): Map<string, string> {
+  public getContent(): Record<string, string> {
     return this.content;
   }
 

@@ -51,12 +51,12 @@ export class DocumentManager {
   }
 
   //get or create a document session
-  public async getOrCreateSession(documentId: string, initialContent?: string): Promise<DocumentSession> {
+  public async getOrCreateSession(documentId: string, initialContent?: Record<string,string>): Promise<DocumentSession> {
     if(this.sessions.has(documentId)){
       //console.log("HAS DOCUMENT")
       return this.sessions.get(documentId)!;
     } else {
-      let content = initialContent || '';
+      let content = initialContent || {};
       if(this.config.snapshotStore && !initialContent) {
           const snap = await this.config.snapshotStore.load(documentId);
           if(snap){
@@ -71,7 +71,7 @@ export class DocumentManager {
   }
 
   //joins a user to a document session, connection point for users
-  public async joinSession(documentId: string, userId: string, connection: IClientConnection, initialContent?: string): Promise<DocumentSession> {
+  public async joinSession(documentId: string, userId: string, connection: IClientConnection, initialContent?: Record<string, string>): Promise<DocumentSession> {
     await this.leaveSession(userId);
     const session = await this.getOrCreateSession(documentId, initialContent);
     session.addUser(userId, connection);

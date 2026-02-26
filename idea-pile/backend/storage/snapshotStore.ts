@@ -2,7 +2,7 @@ import { MongoClient, Collection, Db } from "mongodb";
 
 //this will be the structure of the snapshot
 export interface Snapshot {
-  content: string;
+  content: Record<string, string>;
   version: number;
   timestamp: number;
 }
@@ -17,7 +17,7 @@ export interface SnapshotStore {
 //mongoDB document structure
 interface SnapshotDocument {
   documentId: string;
-  content: string;
+  content: Record<string, string>;
   version: number;
   timestamp: number;
   updatedAt: Date;
