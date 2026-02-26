@@ -5,9 +5,16 @@
 //that the action is impacting so RETAIN(10), DELETE(5) would retain the first 10 characters
 //of a string before deleting the 5 subsequent characters
 export type DeltaOp = 
-  | { type: 'retain'; count: number }
+  | { type: 'retain'; count: number; }
   | { type: 'insert'; text: string; attributes?: Record<string, any> }
   | { type: 'delete'; count: number };
+
+export type Move = {
+  type: 'move';
+  dx: number;  //percentage of the total width of the textbox that its located
+  dy: number;
+  id: string; //id of the textbox that is being moved 
+}
 
 //these are the operations that are executed on the textbox
 export type TransformOp =
@@ -50,6 +57,7 @@ export interface VersionStore {
 //a edit on a document
 export interface DeltaMessage {
   docId: string;
+  stickyId: string; //a unique id for this edit that is used to track it across the system
   baseVersion: number;
   ops: DeltaOp[];
 }
