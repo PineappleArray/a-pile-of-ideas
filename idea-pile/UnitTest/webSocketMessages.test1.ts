@@ -1,4 +1,4 @@
-import { IWebSocketClient } from '../app/hooks/useWebSocket';
+import { WebSocketClient } from '../app/hooks/useWebSocket';
 import { stickyNote } from '../shared/notes';
 
 /**
@@ -8,7 +8,7 @@ import { stickyNote } from '../shared/notes';
  */
 
 // Mock WebSocket client for testing
-class MockWebSocketClient implements IWebSocketClient {
+class MockWebSocketClient implements WebSocketClient {
   sentMessages: any[] = [];
   isConnected = true;
 
