@@ -1,13 +1,12 @@
 "use client";
 import React, { useState } from 'react';
 import Tool from './tools/tools'; // Assuming Tool type is defined elsewhere in your project
-import Pen from './tools/penTool'; // Assuming Pen type is defined elsewhere in your project
-import PenTool from './tools/penTool';
 import onCanvasClick from './tools/textbox';
 import { useEffect, useRef } from 'react';
 import text, { stickyNote } from '../shared/notes'
 import { findOverlaps } from './stickyNote';
-import { IWebSocketClient } from './hooks/useWebSocket';
+import { WebSocketClient } from './hooks/useWebSocket';
+import TextTool from './tools/textTool';
 
 // TopBar.jsx
 // Tailwind-ready React component. Default-exported so you can drop it into a Next.js / Create React App project.
@@ -15,10 +14,10 @@ import { IWebSocketClient } from './hooks/useWebSocket';
 type ToolBarProps = {
   onToolChange?: (tool: string) => void;
   useTool?: (tool: Tool) => void;
-  wsClient?: IWebSocketClient;
+  wsClient?: WebSocketClient;
   documentId?: string;
 };
-const instanceTool = new PenTool(16);
+const instanceTool = new TextTool('', {x:0,y:0});
 const notes = new Array<stickyNote>();
 
 export default function ToolBar({ onToolChange, useTool, wsClient, documentId }: ToolBarProps) {
@@ -82,6 +81,7 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
 
           // Send WebSocket message to create sticky note
           if (wsClient && documentId) {
+            console.log('Sending create-sticky-note message for', boxId);
             wsClient.send({
               type: 'create-sticky-note',
               documentId,

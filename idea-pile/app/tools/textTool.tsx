@@ -10,7 +10,7 @@ export default class TextTool extends Tool {
   location: Location;
 
   constructor(text: string, location: Location) {
-    super("Text", 0, 'black');
+    super("Text");
     this.text = text;
     this.location = location;
   }
