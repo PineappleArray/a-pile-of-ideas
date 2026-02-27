@@ -117,7 +117,7 @@ public async handleOperation(userId: string, message: DeltaMessage): Promise<{ v
 }
 
   //update a user's cursor position
-  public updateCursor(userId: string, cursor: { line: number; ch: number }): void {
+  public updateCursor(userId: string, cursor: { x: number; y: number }): void {
     const docId = this.userToDocument.get(userId);
     if(docId){
         this.getSession(docId)?.updateCursor(userId, cursor);

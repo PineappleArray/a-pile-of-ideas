@@ -6,7 +6,7 @@ export type WebSocketMessage =
   | { type: 'user-joined'; userId: string }
   | { type: 'user-left'; userId: string }
   | { type: 'error'; error: string }
-  | { type: 'cursor'; userId: string; cursor: { line: number; ch: number } }
+  | { type: 'cursor'; userId: string; cursor: { x: number; y: number } }
   | { type: 'move'; userId: string; x: number; y: number }
   | { type: 'resize'; userId: string; width: number; height: number }
   | { type: string; [key: string]: any };

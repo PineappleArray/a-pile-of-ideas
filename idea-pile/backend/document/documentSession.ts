@@ -12,7 +12,7 @@ export interface User {
   userId: string;
   version: number;  //What version of the document this user has
   joinedAt: number;
-  cursor: { line: number; ch: number } | null;
+  cursor: { x: number; y: number } | null;
 }
 
 export interface HistoricalDelta {
@@ -187,7 +187,7 @@ export class DocumentSession {
   }
 
   //this will send a cursor of a user to the rest of the users
-  public updateCursor(userId: string, cursor: { line: number; ch: number }): void {
+  public updateCursor(userId: string, cursor: { x: number; y: number }): void {
     const user = this.users.get(userId);
     
     if (!user) {
