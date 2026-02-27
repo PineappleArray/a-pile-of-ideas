@@ -3,7 +3,9 @@ import { PenTool, FileText, Users, Lightbulb } from 'lucide-react';
 import ToolBar from './toolbar';
 import React from 'react';
 import ToolClass from './tools/tools';
-import { text } from '../shared/notes'
+import text from '../shared/notes'
+import { useWebSocket } from './hooks/useWebSocket';
+
 export default function WhiteboardPage() {
     const symbols = [
         {
@@ -14,6 +16,10 @@ export default function WhiteboardPage() {
     const [fontSize, setFontSize] = React.useState(16);
     const [textFields, setTextFields] = React.useState<text[]>([]);
     const [lastClick, setLastClick] = React.useState<{x:number,y:number}|null>(null);
+    
+    // WebSocket connection - connect to localhost:8080 (adjust URL as needed)
+    const wsClient = useWebSocket('ws://localhost:8080');
+    const documentId = 'default-document'; // Use your actual document ID
 
   function handleToolAction(x: number, y: number, e: React.MouseEvent<HTMLDivElement>){
     // Route click to the currently selected tool
@@ -64,7 +70,10 @@ export default function WhiteboardPage() {
   useTool={(toolInstance) => {
     
     console.log("Using tool:", toolInstance?.name);
-  }}/>
+  }}
+  wsClient={wsClient}
+  documentId={documentId}
+/>
   
   </div>
   );

@@ -7,6 +7,7 @@ import onCanvasClick from './tools/textbox';
 import { useEffect, useRef } from 'react';
 import text, { stickyNote } from '../shared/notes'
 import { findOverlaps } from './stickyNote';
+import { IWebSocketClient } from './hooks/useWebSocket';
 
 // TopBar.jsx
 // Tailwind-ready React component. Default-exported so you can drop it into a Next.js / Create React App project.
@@ -15,11 +16,13 @@ type ToolBarProps = {
   onToolChange?: (tool: string) => void;
   onFontSizeChange?: (size: number) => void;
   useTool?: (tool: Tool) => void;
+  wsClient?: IWebSocketClient;
+  documentId?: string;
 };
 const instanceTool = new PenTool(16, 'Blue');
 const notes = new Array<stickyNote>();
 
-export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: ToolBarProps) {
+export default function ToolBar({ onToolChange, onFontSizeChange, useTool, wsClient, documentId }: ToolBarProps) {
   const [active, setActive] = useState('select');
   const [fontSize, setFontSize] = useState(16);
 
@@ -65,6 +68,7 @@ export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: Too
         if (!findOverlaps(notes, x, y, width, height, 0.8)) {
           // Create a new textarea
           const newArea: HTMLTextAreaElement = document.createElement('textarea');
+          const boxId = `box-${Date.now()}`;
 
           // Style it
           newArea.style.width = width + 'px';
@@ -74,7 +78,7 @@ export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: Too
           newArea.style.resize = 'both';
           newArea.style.border = '2px solid black';
           newArea.style.overflowY = 'hidden';
-          newArea.id = `box-${Date.now()}`;
+          newArea.id = boxId;
 
           // Position it at the click coordinates
           newArea.style.left = x + 'px';
@@ -83,9 +87,46 @@ export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: Too
           // Add it to the container
           container.appendChild(newArea);
           newArea.focus();
-          textMap.set(newArea.id, new text(x,y,newArea.id,"",-1,-1,width,height))
-          // Add to spatial tree
-          //treeRef.current.insert(x, y, width, height, newArea);
+          const textObj = new text(x, y, boxId, "", -1, -1, width, height);
+          textMap.set(boxId, textObj);
+
+          // Send WebSocket message to create sticky note
+          if (wsClient && documentId) {
+            wsClient.send({
+              type: 'create-sticky-note',
+              documentId,
+              id: boxId,
+              x,
+              y,
+              width,
+              height,
+              content: '',
+              timestamp: Date.now(),
+            });
+          }
+
+          // Add input listener to send updates
+          newArea.addEventListener('input', (e) => {
+            const textarea = e.target as HTMLTextAreaElement;
+            const updatedText = textarea.value;
+            
+            // Update local text object
+            const localText = textMap.get(textarea.id);
+            if (localText) {
+              localText.editText(updatedText);
+            }
+
+            // Send WebSocket message for text update
+            if (wsClient && documentId) {
+              wsClient.send({
+                type: 'update-sticky-note',
+                documentId,
+                id: textarea.id,
+                content: updatedText,
+                timestamp: Date.now(),
+              });
+            }
+          });
         } else {
           console.log('Cannot place textarea - overlaps with existing element');
         }

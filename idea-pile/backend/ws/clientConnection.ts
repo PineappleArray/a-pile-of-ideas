@@ -1,11 +1,13 @@
 //Represents a single WebSocket connection to a client
  
-import { WebSocket } from 'ws';
+// Avoid importing the `WebSocket` constructor from 'ws' directly in tests
+// which may not export the same symbol. Use a flexible WebSocketLike type.
+type WebSocketLike = any;
 import { Delta } from '../../delta/delta';
 import { IClientConnection } from './IClient';
 
 export class ClientConnection implements IClientConnection{
-  private ws: WebSocket;
+  private ws: WebSocketLike;
   private userId?: string;
   private documentId?: string;
 
