@@ -23,10 +23,8 @@ class PenTool extends Tool {
   strokes: any[]; // Replace 'any' with your actual stroke type
   currentStroke: any | null; // Replace 'any' with your actual stroke type
 
-  constructor(size: number, color: string) {
-    super("Pen", size, color);
-    this.size = size;
-    this.color = color;
+  constructor(size: number) {
+    super("Pen");
     this.strokes = [];
     this.currentStroke = null;
   }

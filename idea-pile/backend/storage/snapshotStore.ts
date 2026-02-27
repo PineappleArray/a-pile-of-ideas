@@ -1,8 +1,9 @@
+import stickyNote from "@/shared/notes";
 import { MongoClient, Collection, Db } from "mongodb";
 
 //this will be the structure of the snapshot
 export interface Snapshot {
-  content: Record<string, string>;
+  content: Record<string, stickyNote>;
   version: number;
   timestamp: number;
 }
@@ -17,7 +18,7 @@ export interface SnapshotStore {
 //mongoDB document structure
 interface SnapshotDocument {
   documentId: string;
-  content: Record<string, string>;
+  content: Record<string, stickyNote>;
   version: number;
   timestamp: number;
   updatedAt: Date;

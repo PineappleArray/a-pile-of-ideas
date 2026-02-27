@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
+//define the shape of messages sent through WebSocket
 export type WebSocketMessage = {
   type: string;
   [key: string]: any;
@@ -12,10 +13,12 @@ export interface IWebSocketClient {
   isConnected: boolean;
 }
 
+//custom hook to manage WebSocket connection
 export const useWebSocket = (url: string): IWebSocketClient & { isConnected: boolean } => {
   const ws = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
+  //establish WebSocket connection on mount and clean up on unmount
   useEffect(() => {
     const connect = () => {
       try {
@@ -69,7 +72,7 @@ export const useWebSocket = (url: string): IWebSocketClient & { isConnected: boo
     if (ws.current) {
       ws.current.close();
     }
-    // Re-create connection - will use the useEffect
+    //re-create connection - will use the useEffect
   };
 
   const disconnect = () => {

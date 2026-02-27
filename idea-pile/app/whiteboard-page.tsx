@@ -13,7 +13,6 @@ export default function WhiteboardPage() {
         }
     ];
     const [tool, setTool] = React.useState("None");
-    const [fontSize, setFontSize] = React.useState(16);
     const [textFields, setTextFields] = React.useState<text[]>([]);
     const [lastClick, setLastClick] = React.useState<{x:number,y:number}|null>(null);
     
@@ -62,10 +61,6 @@ export default function WhiteboardPage() {
   onToolChange={(t: string) => {
     console.log("Tool changed:", t);
     setTool(t);
-  }}
-  onFontSizeChange={(size: React.SetStateAction<number>) => {
-    console.log("Font size changed:", size);
-    setFontSize(size);
   }}
   useTool={(toolInstance) => {
     

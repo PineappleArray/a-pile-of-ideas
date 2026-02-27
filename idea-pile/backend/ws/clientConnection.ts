@@ -2,16 +2,22 @@
  
 // Avoid importing the `WebSocket` constructor from 'ws' directly in tests
 // which may not export the same symbol. Use a flexible WebSocketLike type.
-type WebSocketLike = any;
 import { Delta } from '../../delta/delta';
 import { IClientConnection } from './IClient';
+
+type WebSocketLike = {
+  send(data: string): void;
+  close(code?: number, reason?: string): void;
+  readyState: number;
+  on(event: string, listener: (...args: any[]) => void): void;
+}
 
 export class ClientConnection implements IClientConnection{
   private ws: WebSocketLike;
   private userId?: string;
   private documentId?: string;
 
-  constructor(ws: WebSocket) {
+  constructor(ws: WebSocketLike) {
     this.ws = ws;
   }
 

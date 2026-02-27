@@ -38,7 +38,6 @@ export class RedisOperationStore implements OperationStore {
   //adds an operation to redis
   async save(operation: StoredOperation): Promise<void> {
     const key = `ops:${operation.documentId}`;
-    
 
     await this.redis.rpush(key, JSON.stringify({
       version: operation.version,
