@@ -4,10 +4,9 @@ import Tool from './tools/tools'; // Assuming Tool type is defined elsewhere in 
 import Pen from './tools/penTool'; // Assuming Pen type is defined elsewhere in your project
 import PenTool from './tools/penTool';
 import onCanvasClick from './tools/textbox';
-import { SpatialTree } from './utils/spatialtree';
 import { useEffect, useRef } from 'react';
-import { text } from '../shared/notes'
-
+import text, { stickyNote } from '../shared/notes'
+import { findOverlaps } from './stickyNote';
 
 // TopBar.jsx
 // Tailwind-ready React component. Default-exported so you can drop it into a Next.js / Create React App project.
@@ -18,7 +17,7 @@ type ToolBarProps = {
   useTool?: (tool: Tool) => void;
 };
 const instanceTool = new PenTool(16, 'Blue');
-const tree = new SpatialTree()
+const notes = new Array<stickyNote>();
 
 export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: ToolBarProps) {
   const [active, setActive] = useState('select');
@@ -45,7 +44,7 @@ export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: Too
 
   const btnBase = 'inline-flex items-center gap-2 px-3 py-2 rounded-2xl text-sm font-medium transition-shadow focus:outline-none focus:ring-2 focus:ring-offset-2';
   const containerRef = useRef<HTMLDivElement>(null);
-  const treeRef = useRef<SpatialTree>(new SpatialTree());
+  const listRef = useRef<Array<stickyNote>>(new Array<stickyNote>());
 
   useEffect(() => {
     const container = containerRef.current;
@@ -63,7 +62,7 @@ export default function ToolBar({ onToolChange, onFontSizeChange, useTool }: Too
         const height = 80;
 
         // Check if we can insert (no overlap)
-        if (!treeRef.current.hasOverlap(x, y, width, height)) {
+        if (!findOverlaps(notes, x, y, width, height, 0.8)) {
           // Create a new textarea
           const newArea: HTMLTextAreaElement = document.createElement('textarea');
 
