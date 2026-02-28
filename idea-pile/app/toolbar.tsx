@@ -19,6 +19,7 @@ type ToolBarProps = {
 };
 const instanceTool = new TextTool('', {x:0,y:0});
 const notes = new Array<stickyNote>();
+const userId = "111111"; // Placeholder user ID, replace with actual user management logic
 
 export default function ToolBar({ onToolChange, useTool, wsClient, documentId }: ToolBarProps) {
   const [active, setActive] = useState('select');
@@ -38,6 +39,11 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<Array<stickyNote>>(new Array<stickyNote>());
 
+  /*
+  NEED TO FIX CLICK AND DRAG
+
+
+  */
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -45,7 +51,7 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
     const handleClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
 
-      // Clicked on container background (create new textarea)
+      //Clicked on container background (create new textarea)
       if (target === container) {
         const rect: DOMRect = container.getBoundingClientRect();
         const x = event.clientX - rect.left - 10;
@@ -53,11 +59,11 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
         const width = 100;
         const height = 80;
 
-        // Check if we can insert (no overlap)
+        //Check if we can insert (no overlap)
         if (!findOverlaps(notes, x, y, width, height, 0.8)) {
           // Create a new textarea
           const newArea: HTMLTextAreaElement = document.createElement('textarea');
-          const boxId = `box-${Date.now()}`;
+          const boxId = `box-${userId}-${Date.now()}`;
 
           // Style it
           newArea.style.width = width + 'px';
@@ -123,19 +129,19 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
       }
 
       // Clicked on a textarea (select it)
-      else if (target.id?.startsWith('box-')) {
-        console.log('Selected box:', target.id);
+      //else if (target.id?.startsWith('box-')) {
+      //  console.log('Selected box:', target.id);
         
         // Reset all textareas to white
-        container.querySelectorAll('textarea').forEach(textarea => {
-          (textarea as HTMLTextAreaElement).style.backgroundColor = 'white';
-        });
+      //  container.querySelectorAll('textarea').forEach(textarea => {
+      //    (textarea as HTMLTextAreaElement).style.backgroundColor = 'white';
+      //  });
         
         //textMap.get(i)?.editText(target.)
         //textMap.set(target.id, )
         // Highlight selected one
-        target.style.backgroundColor = 'lightblue';
-      }
+      //  target.style.backgroundColor = 'lightblue';
+      //}
     };
 
     container.addEventListener('click', handleClick);
@@ -144,7 +150,7 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
     return () => {
       container.removeEventListener('click', handleClick);
     };
-  }, []);
+  }, [wsClient, documentId, notes, userId]);
 
   return (
     <>

@@ -29,20 +29,6 @@ export default function WhiteboardPage() {
       console.log('Created text at', x, y);
       return;
     }
-
-    if (tool === 'pen'){
-      console.log('Pen tool click at', x, y);
-      // TODO: forward to pen tool instance / stroke start
-      return;
-    }
-
-    if (tool === 'eraser' || tool === 'eraser'){
-      console.log('Eraser at', x, y);
-      
-      return;
-    }
-
-    
     console.log('Board click at', x, y);
   }
 
