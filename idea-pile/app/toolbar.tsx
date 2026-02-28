@@ -7,6 +7,8 @@ import text, { stickyNote } from '../shared/notes'
 import { findOverlaps } from './stickyNote';
 import { WebSocketClient } from './hooks/useWebSocket';
 import TextTool from './tools/textTool';
+import { fa } from 'zod/locales';
+import { set } from 'mongoose';
 
 // TopBar.jsx
 // Tailwind-ready React component. Default-exported so you can drop it into a Next.js / Create React App project.
@@ -23,6 +25,8 @@ const userId = "111111"; // Placeholder user ID, replace with actual user manage
 
 export default function ToolBar({ onToolChange, useTool, wsClient, documentId }: ToolBarProps) {
   const [active, setActive] = useState('select');
+  const mouseDownPos = useRef<{ x: number; y: number } | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   //This will make a map that will hold all the text objects linked to their id
   //using map for O(1) indexing
@@ -30,15 +34,14 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
 
   //This will change the tools that are selected
   function handleTool(tool: string) {
-      setActive(tool);
-      if (onToolChange) onToolChange(tool);
+    setActive(tool);
+    if (onToolChange) onToolChange(tool);
   }
 
 
   const btnBase = 'inline-flex items-center gap-2 px-3 py-2 rounded-2xl text-sm font-medium transition-shadow focus:outline-none focus:ring-2 focus:ring-offset-2';
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<Array<stickyNote>>(new Array<stickyNote>());
-
   /*
   NEED TO FIX CLICK AND DRAG
 
@@ -48,20 +51,34 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
     const container = containerRef.current;
     if (!container) return;
 
+    const handleMouseDown = (e: MouseEvent) => {
+      mouseDownPos.current = { x: e.clientX, y: e.clientY}
+    }
+
     const handleClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
+      if (mouseDownPos.current) {
+        const dx = Math.abs(event.clientX - mouseDownPos.current.x)
+        const dy = Math.abs(event.clientY - mouseDownPos.current.y)
+        if (dx > 5 || dy > 5) return
+      }
+
+      // Use mousedown position instead of click position
+      const origin = mouseDownPos.current ?? { x: event.clientX, y: event.clientY }
+  
+      const rect = container.getBoundingClientRect();
+      const x = origin.x - rect.left - 10;
+      const y = origin.y - rect.top - 10;
 
       //Clicked on container background (create new textarea)
       if (target === container) {
         const rect: DOMRect = container.getBoundingClientRect();
-        const x = event.clientX - rect.left - 10;
+        const x = event.clientX - rect.  left - 10;
         const y = event.clientY - rect.top - 10;
         const width = 100;
         const height = 80;
-
         //Check if we can insert (no overlap)
-        if (!findOverlaps(notes, x, y, width, height, 0.8)) {
-          // Create a new textarea
+        if (isEditing == false && !findOverlaps(notes, x, y, width, height, 0.8)) {
           const newArea: HTMLTextAreaElement = document.createElement('textarea');
           const boxId = `box-${userId}-${Date.now()}`;
 
@@ -123,10 +140,15 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
               });
             }
           });
-        } else {
-          console.log('Cannot place textarea - overlaps with existing element');
+
+          newArea.addEventListener('mousedown', (e) => {
+            setIsEditing(true);
+          });
+        } else if (!findOverlaps(notes, x, y, width, height, 0.80)) {
+          setIsEditing(false);
+          console.log('EDITINGBOX IS FALSE');
         }
-      }
+      }  
 
       // Clicked on a textarea (select it)
       //else if (target.id?.startsWith('box-')) {
@@ -144,11 +166,13 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
       //}
     };
 
-    container.addEventListener('click', handleClick);
+    container.addEventListener('mousedown', handleMouseDown)
+    container.addEventListener('mousedown', handleClick);
 
     // Cleanup
     return () => {
-      container.removeEventListener('click', handleClick);
+      container.removeEventListener('mousedown', handleMouseDown)
+      container.removeEventListener('mousedown', handleClick);
     };
   }, [wsClient, documentId, notes, userId]);
 
