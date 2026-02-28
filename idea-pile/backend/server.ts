@@ -1,17 +1,21 @@
-import WebSocket, { WebSocketServer } from 'ws'
+//server infrastructure, handles WebSocket connections and delegates message handling to the Gateway
+import { WebSocketServer } from 'ws'
+import { Gateway } from './gateway'
 
 const wss = new WebSocketServer({ port: 8080 })
+const gateway = new Gateway(wss)  //connects to gateway, kept seperate for better modularity and testability
 
-wss.on('connection', (socket: WebSocket) => {
+wss.on('connection', (socket) => {
   console.log('client connected')
 
   socket.on('message', (data) => {
     const message = JSON.parse(data.toString())
     console.log('received:', message)
 
-    handleConnection(socket, message)
+    gateway.handleConnection(socket, message)
   })
 
+  //parse connection
   socket.on('close', () => {
     console.log('client disconnected')
   })
@@ -22,22 +26,3 @@ wss.on('connection', (socket: WebSocket) => {
 })
 
 console.log('WebSocket server running on ws://localhost:8080')
-
-function handleConnection(socket: WebSocket, message: any) {
-    switch (message.type) {
-        case 'delta':
-            console.log('Received delta:', message);
-        case 'init':
-            console.log('Received init message:', message);
-        case 'resize':
-            console.log('Received resize message:', message);
-        case 'cursor':
-            console.log('Received cursor update:', message);
-        case 'user-joined':
-            console.log('User joined:', message);
-        case 'user-left':
-            console.log('User left:', message);
-        default:
-            console.log('Unknown message type:', message);
-    }
-}
