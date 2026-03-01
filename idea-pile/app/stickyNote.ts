@@ -6,7 +6,7 @@ export function getOverlapArea(a: stickyNote, x: number, y: number, width: numbe
   return xOverlap * yOverlap;
 }
 
-export function findOverlaps(notes: stickyNote[], x: number, y: number, width: number, height: number, threshold = 0.8): boolean {
+export function findOverlaps(notes: stickyNote[], x: number, y: number, width: number, height: number, threshold = 0.5): boolean {
   for (let i = 0; i < notes.length; i++) {
     const a = notes[i];
 
@@ -15,8 +15,9 @@ export function findOverlaps(notes: stickyNote[], x: number, y: number, width: n
 
       const areaA = a.box_width * a.box_height;
       const areaB = width * height;
+      console.log(`Overlap ${overlapArea}px², Threshold: ${threshold * areaA}px²`)
 
-      if (overlapArea / areaA >= threshold || overlapArea / areaB >= threshold) {
+      if (overlapArea >= threshold * areaA || overlapArea >= threshold * areaB) {
         return true; //Found a pair that overlaps beyond the threshold
       }
     }

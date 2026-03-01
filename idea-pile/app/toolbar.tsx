@@ -20,13 +20,13 @@ type ToolBarProps = {
   documentId?: string;
 };
 const instanceTool = new TextTool('', {x:0,y:0});
-const notes = new Array<stickyNote>();
 const userId = "111111"; // Placeholder user ID, replace with actual user management logic
 
 export default function ToolBar({ onToolChange, useTool, wsClient, documentId }: ToolBarProps) {
   const [active, setActive] = useState('select');
   const mouseDownPos = useRef<{ x: number; y: number } | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [notes, setNotes] = useState<stickyNote[]>([])
 
   //This will make a map that will hold all the text objects linked to their id
   //using map for O(1) indexing
@@ -51,8 +51,34 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
     const container = containerRef.current;
     if (!container) return;
 
-    const handleMouseDown = (e: MouseEvent) => {
-      mouseDownPos.current = { x: e.clientX, y: e.clientY}
+    const handleMouseDown = (event: MouseEvent) => {
+      mouseDownPos.current = { x: event.clientX, y: event.clientY}
+      const target = event.target as HTMLElement
+      if (!target.id?.startsWith('box-')) return
+
+      event.stopPropagation()
+
+      const startX = event.clientX - target.offsetLeft
+      const startY = event.clientY - target.offsetTop
+      console.log(`Mouse down on ${target.id} at (${event.clientX}, ${event.clientY}), startX: ${startX}, startY: ${startY}`)
+      let isDragging = false
+
+      const onMouseMove = (e: MouseEvent) => {
+
+        //only start dragging after moving 8px so it wont happen when highlighting text
+        //if (!isDragging && dx < 8 && dy < 8) return  this doesnt work
+        if(!isDragging && ((startX < 0 && startX > target.offsetWidth) || startY > 10)) return
+    
+        isDragging = true
+        target.style.left = e.clientX - startX + 'px'
+        target.style.top = e.clientY - startY + 'px'
+      }
+      const onMouseUp = () => {
+        document.removeEventListener('mousemove', onMouseMove)
+        document.removeEventListener('mouseup', onMouseUp)
+      }
+      document.addEventListener('mousemove', onMouseMove)
+      document.addEventListener('mouseup', onMouseUp)
     }
 
     const handleClick = (event: MouseEvent) => {
@@ -78,9 +104,10 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
         const width = 100;
         const height = 80;
         //Check if we can insert (no overlap)
-        if (isEditing == false && !findOverlaps(notes, x, y, width, height, 0.8)) {
+        if (isEditing == false && !findOverlaps(notes, x, y, width, height, 0.2)) {
           const newArea: HTMLTextAreaElement = document.createElement('textarea');
           const boxId = `box-${userId}-${Date.now()}`;
+          setNotes([...notes, new stickyNote(x, y, boxId, "", -1, -1, width, height)]);
 
           // Style it
           newArea.style.width = width + 'px';
@@ -144,31 +171,16 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
           newArea.addEventListener('mousedown', (e) => {
             setIsEditing(true);
           });
-        } else if (!findOverlaps(notes, x, y, width, height, 0.80)) {
+        } else if (!findOverlaps(notes, x, y, width, height, 0.2)) {
           setIsEditing(false);
           console.log('EDITINGBOX IS FALSE');
         }
       }  
-
-      // Clicked on a textarea (select it)
-      //else if (target.id?.startsWith('box-')) {
-      //  console.log('Selected box:', target.id);
-        
-        // Reset all textareas to white
-      //  container.querySelectorAll('textarea').forEach(textarea => {
-      //    (textarea as HTMLTextAreaElement).style.backgroundColor = 'white';
-      //  });
-        
-        //textMap.get(i)?.editText(target.)
-        //textMap.set(target.id, )
-        // Highlight selected one
-      //  target.style.backgroundColor = 'lightblue';
-      //}
     };
 
     container.addEventListener('mousedown', handleMouseDown)
     container.addEventListener('mousedown', handleClick);
-
+    
     // Cleanup
     return () => {
       container.removeEventListener('mousedown', handleMouseDown)
