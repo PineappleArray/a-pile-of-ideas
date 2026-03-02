@@ -6,10 +6,8 @@ export function getOverlapArea(a: stickyNote, x: number, y: number, width: numbe
   return xOverlap * yOverlap;
 }
 
-export function findOverlaps(notes: stickyNote[], x: number, y: number, width: number, height: number, threshold = 0.5): boolean {
-  for (let i = 0; i < notes.length; i++) {
-    const a = notes[i];
-
+export function findOverlaps(notes: Map<string, stickyNote>, x: number, y: number, width: number, height: number, threshold = 0.5): boolean {
+  for (const a of notes.values()) {
       const overlapArea = getOverlapArea(a, x, y, width, height);
       if (overlapArea === 0) continue;
 

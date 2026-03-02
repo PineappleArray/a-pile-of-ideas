@@ -5,7 +5,7 @@ import onCanvasClick from './tools/textbox';
 import { useEffect, useRef } from 'react';
 import text, { stickyNote } from '../shared/notes'
 import { findOverlaps } from './stickyNote';
-import { WebSocketClient } from './hooks/useWebSocket';
+import { useWebSocket, WebSocketClient } from './hooks/useWebSocket';
 import TextTool from './tools/textTool';
 import { fa } from 'zod/locales';
 import { set } from 'mongoose';
@@ -26,7 +26,7 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
   const [active, setActive] = useState('select');
   const mouseDownPos = useRef<{ x: number; y: number } | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [notes, setNotes] = useState<stickyNote[]>([])
+  const [notes, setNotes] = useState<Map<string, stickyNote>>(new Map<string, stickyNote>());
 
   //This will make a map that will hold all the text objects linked to their id
   //using map for O(1) indexing
@@ -38,15 +38,88 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
     if (onToolChange) onToolChange(tool);
   }
 
-
   const btnBase = 'inline-flex items-center gap-2 px-3 py-2 rounded-2xl text-sm font-medium transition-shadow focus:outline-none focus:ring-2 focus:ring-offset-2';
   const containerRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<Array<stickyNote>>(new Array<stickyNote>());
-  /*
-  NEED TO FIX CLICK AND DRAG
 
+  const handleWebSocketMessage = (message: any) => {
+    switch (message.type) {
+      // Sticky note operations
+      case 'create-sticky-note':
+        setNotes(prev => new Map(prev).set(message.id, new stickyNote(
+          message.centerX,
+          message.centerY,
+          message.id,
+          message.content,
+          -1,
+          -1,
+          message.width,
+          message.height
+        )))
+        break
 
-  */
+      case 'update-sticky-note':
+        setNotes(prev => { 
+          const next = new Map(prev)
+          const note = next.get(message.id)
+          if (note) next.get(message.id)?.editText(message.content)
+          return next
+        })
+        break
+
+      // User presence
+      case 'user-joined':
+        console.log('user joined:', message.userId)
+        // TODO: Update UI to show active users
+        break
+
+      case 'user-left':
+        console.log('user left:', message.userId)
+        // TODO: Remove user from active users list
+        break
+
+      // Document operations
+      case 'delta':
+        console.log('Received delta:', message.delta, 'version:', message.version, 'author:', message.author)
+        // TODO: Apply operational transformation delta
+        break
+
+      case 'init':
+        console.log('Received init:', message.content, 'version:', message.version, 'users:', message.users)
+        // TODO: Initialize document with content and set active users
+        break
+
+      // User interactions
+      case 'cursor':
+        console.log('Cursor update from', message.userId, ':', message.cursor)
+        // TODO: Update cursor position for user
+        break
+
+      case 'move':
+        console.log('Move from', message.userId, 'to:', message.x, message.y)
+        // TODO: Update element position for user
+        break
+
+      case 'resize':
+        console.log('Resize from', message.userId, ':', message.width, 'x', message.height)
+        // TODO: Update element size for user
+        break
+
+      // Error handling
+      case 'error':
+        console.error('WebSocket error:', message.error)
+        // TODO: Display error notification to user
+        break
+
+      // Unknown message type
+      default:
+        console.warn('Unknown message type:', message.type, message)
+    }
+  }
+
+  const { send, isConnected } = useWebSocket('ws://localhost:8080', {
+    onMessage: handleWebSocketMessage
+  })
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -72,6 +145,22 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
         isDragging = true
         target.style.left = e.clientX - startX + 'px'
         target.style.top = e.clientY - startY + 'px'
+
+        if (wsClient && documentId) {
+          console.log('Sending create-sticky-note message for', target);
+          wsClient.send({
+            type: 'create-sticky-note',
+            documentId,
+            id: target.id,
+            x: parseInt(target.style.left),
+            y: parseInt(target.style.top),
+            width: parseInt(target.style.width),
+            height: parseInt(target.style.height),
+            content: notes.get(target.id)?.text || '',
+            timestamp: Date.now(),
+          });
+
+        }
       }
       const onMouseUp = () => {
         document.removeEventListener('mousemove', onMouseMove)
@@ -107,7 +196,7 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
         if (isEditing == false && !findOverlaps(notes, x, y, width, height, 0.2)) {
           const newArea: HTMLTextAreaElement = document.createElement('textarea');
           const boxId = `box-${userId}-${Date.now()}`;
-          setNotes([...notes, new stickyNote(x, y, boxId, "", -1, -1, width, height)]);
+          setNotes(prev => new Map(prev).set(boxId, new stickyNote(x, y, boxId, "", -1, -1, width, height)));
 
           // Style it
           newArea.style.width = width + 'px';
@@ -186,7 +275,7 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
       container.removeEventListener('mousedown', handleMouseDown)
       container.removeEventListener('mousedown', handleClick);
     };
-  }, [wsClient, documentId, notes, userId]);
+  }, [wsClient, documentId, notes, userId]);   //dependency array includes notes to ensure it has the latest state when checking for overlaps
 
   return (
     <>
