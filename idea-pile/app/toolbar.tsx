@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { use, useState } from 'react';
 import Tool from './tools/tools'; // Assuming Tool type is defined elsewhere in your project
 import onCanvasClick from './tools/textbox';
 import { useEffect, useRef } from 'react';
@@ -20,13 +20,14 @@ type ToolBarProps = {
   documentId?: string;
 };
 const instanceTool = new TextTool('', {x:0,y:0});
-const userId = "111111"; // Placeholder user ID, replace with actual user management logic
+const userId = Math.random().toString(36).substring(2, 15); // Placeholder user ID, replace with actual user management logic
 
 export default function ToolBar({ onToolChange, useTool, wsClient, documentId }: ToolBarProps) {
   const [active, setActive] = useState('select');
   const mouseDownPos = useRef<{ x: number; y: number } | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [notes, setNotes] = useState<Map<string, stickyNote>>(new Map<string, stickyNote>());
+  const [cursors, setCursors] = useState<Map<string, { x: number; y: number, id: string }>>(new Map()); // Map of userId to cursor position
 
   //This will make a map that will hold all the text objects linked to their id
   //using map for O(1) indexing
@@ -69,12 +70,16 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
       // User presence
       case 'user-joined':
         console.log('user joined:', message.userId)
-        // TODO: Update UI to show active users
+        setCursors(prev => new Map(prev).set(message.userId, { x: message.x, y: message.y, id: message.userId }))
         break
 
-      case 'user-left':
+      case 'user-left': 
         console.log('user left:', message.userId)
-        // TODO: Remove user from active users list
+        setCursors(prev => {
+          const next = new Map(prev)
+          next.delete(message.userId)
+          return next
+        })
         break
 
       // Document operations
@@ -119,6 +124,29 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
   const { send, isConnected } = useWebSocket('ws://localhost:8080', {
     onMessage: handleWebSocketMessage
   })
+
+  useEffect(() => {
+    cursors.forEach((cursor, userId) => {
+      let cursorEl = document.getElementById(`cursor-${userId}`);
+      if (cursorEl) {
+        cursorEl.style.left = `${cursor.x}px`;
+        cursorEl.style.top = `${cursor.y}px`;
+      } else {
+        cursorEl = document.createElement('div');
+        cursorEl.id = `cursor-${userId}`;
+        cursorEl.style.position = 'absolute';
+        cursorEl.style.width = '10px';
+        cursorEl.style.height = '10px';
+        cursorEl.style.borderRadius = '50%';
+        //cursorEl.style.backgroundColor = '#1500ff';
+        cursorEl.style.opacity = '0.5';
+        cursorEl.textContent = `USER`;
+        cursorEl.style.fontSize = '8px';
+        cursorEl.style.color = '#1500ff';
+        document.body.appendChild(cursorEl);
+      }
+    });
+  }, [cursors]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -181,6 +209,8 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
       // Use mousedown position instead of click position
       const origin = mouseDownPos.current ?? { x: event.clientX, y: event.clientY }
   
+      setCursors(prev => new Map(prev).set(userId, { x: 100, y: 100, id: userId}))
+
       const rect = container.getBoundingClientRect();
       const x = origin.x - rect.left - 10;
       const y = origin.y - rect.top - 10;
