@@ -7,6 +7,8 @@ type DeltaOp =
 ```
 In the occurance of multiple simultaneous edits the edits will be transformed against each other in a predetermined order before being executed on the document.
 
+DISCLAIMER (FRONTEND SET TO BE COMPLETELY RESTRUCTURED TO AVOID TECHNICAL DEBT)
+
 FRONTEND: 
 The frontend is built with React and Next.js using TypeScript. I chose to have optimistic UI rendering as it will allow for a smoother user experience and less latency then if the changes were validated first on the server. The key challenge was providing instant feedback while maintaining sync across multiple users. The tools are currently textbox creation and the ability to draw on the whiteboard (WIP) as well as having a super class of data so data can be interacted with interchangably.
 

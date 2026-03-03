@@ -8,6 +8,7 @@ import { findOverlaps } from './stickyNote';
 import { useWebSocket, WebSocketClient } from './hooks/useWebSocket';
 import TextTool from './tools/textTool';
 import { set, throttle } from 'lodash';
+import { createPortal } from 'react-dom';
 
 type ToolBarProps = {
   onToolChange?: (tool: string) => void;
@@ -28,29 +29,8 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
   //const [cursors, setCursors] = useState<Map<string, {x: number, y: number}>>(new Map()); // Map of userId to cursor position
   const cursorElements = useRef<Map<string, HTMLElement>>(new Map());
 
-  function cursor(cursor: { x: number; y: number }) {
-  let cursorEl = document.getElementById(`cursor-${userId}`);
-      if (cursorEl) {
-        cursorEl.style.left = `${cursor.x}px`;
-        cursorEl.style.top = `${cursor.y}px`;
-      } else {
-        cursorEl = document.createElement('div');
-        cursorEl.id = `cursor-${userId}`;
-        cursorEl.style.position = 'absolute';
-        cursorEl.style.width = '10px';
-        cursorEl.style.height = '10px';
-        cursorEl.style.borderRadius = '50%';
-        //cursorEl.style.backgroundColor = '#1500ff';
-        cursorEl.style.opacity = '0.5';
-        cursorEl.textContent = `USER`;
-        cursorEl.style.fontSize = '20px';
-        cursorEl.style.color = '#1500ff';
-        document.body.appendChild(cursorEl);
-      }
-    }
-
     const handleWebSocketMessage = useCallback((message: any) => {
-    console.log("TM message type:", message.type);
+    console.log("TM message type:", message.type, "to: ",userId);
     switch (message.type) {
       // Sticky note operations
       case 'create-sticky-note':
@@ -82,9 +62,9 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
         break
 
       case 'user-left': 
-        const cursorEl = cursorElements.current.get(message.userId);
-        if (cursorEl) {
-          cursorEl.remove();
+        const cursorEle = cursorElements.current.get(message.userId);
+        if (cursorEle) {
+          cursorEle.remove();
           cursorElements.current.delete(message.userId);
         }
         break
@@ -103,8 +83,31 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
       // User interactions
       case 'cursor':
         console.log('Cursor update from', message.userId, ':', message.cursor)
-        cursor(message.cursor);
-        break
+        const uId = message.userId;
+        const cursorPos: { x: number; y: number } = message.cursor;
+        console.log('Current cursor elements:', Array.from(cursorElements.current.keys()));
+        let cursorEl = document.getElementById(`cursor-${uId}`);
+        if (!cursorEl) {
+          console.log('Creating cursor element for user', uId);
+          cursorEl = document.createElement('div');
+          cursorEl.id = `cursor-${uId}`;
+          cursorEl.style.position = 'fixed';
+          cursorEl.style.pointerEvents = 'none';
+          cursorEl.style.transform = `translate(${cursorPos.x}px, ${cursorPos.y}px)`;
+          cursorEl.textContent = uId;
+          cursorEl.style.minWidth = '20px';
+          cursorEl.style.minHeight = '20px';
+          cursorEl.style.backgroundColor = 'rgba(0, 0, 255, 0.7)';
+          cursorEl.style.color = '#ff0000';
+          cursorEl.style.fontSize = '12px';
+          cursorEl.style.zIndex = '99999';
+          document.body.appendChild(cursorEl);
+          cursorElements.current.set(uId, cursorEl);
+        } else {
+          console.log('Updating cursor position for user', uId, 'to:', cursorPos);
+          cursorEl.style.transform = `translate(${cursorPos.x}px, ${cursorPos.y}px)`;
+        }
+      break
 
       case 'move':
         console.log('Move from', message.userId, 'to:', message.x, message.y)
@@ -312,20 +315,20 @@ useEffect(() => {
   }, [wsClient, documentId, notes, userId]);   //dependency array includes notes to ensure it has the latest state when checking for overlaps
 
   //send cursor position on mouse move, throttled to 100ms to reduce network traffic
-  document.addEventListener('mousemove', throttle((e: MouseEvent) => {
-    if (wsClient && documentId) {
-          //console.log('Sending cursor message for', e.clientX, e.clientY);
-          wsClient.send({
-            type: 'cursor',
-            userId,
-            cursor: {
-              x: e.clientX,
-              y: e.clientY,
-            },
-          });
-        }
-    //console.log(e.clientX, e.clientY);
-  }, 100));
+  useEffect(() => {
+    const handler = throttle((e: MouseEvent) => {
+      if (wsClient && documentId) {
+        wsClient.send({
+          type: 'cursor',
+          userId,
+          cursor: { x: e.clientX, y: e.clientY },
+        });
+      }
+    }, 100);
+
+    document.addEventListener('mousemove', handler);
+    return () => document.removeEventListener('mousemove', handler);
+  }, [wsClient, documentId]);
 
 
   return (

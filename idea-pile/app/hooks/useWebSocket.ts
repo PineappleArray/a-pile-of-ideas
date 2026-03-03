@@ -33,6 +33,22 @@ export const useWebSocket = (initialUrl: string, options: UseWebSocketOptions = 
   const [isConnected, setIsConnected] = useState(false);
   const [activeUrl, setActiveUrl] = useState(initialUrl);
 
+  const onMessageRef = useRef(onMessage);
+  useEffect(() => {
+    onMessageRef.current = onMessage; //keep ref up to date without reconnecting
+  }, [onMessage]);
+
+  if (ws && ws.current) {
+    ws.current.onmessage = (event) => {
+      try {
+        const parsed = JSON.parse(event.data);
+        onMessageRef.current?.(parsed); // ← use ref, not onMessage directly
+      } catch {
+        console.error('Failed to parse message:', event.data);
+      }
+    };
+  }
+  
   const connectToUrl = useCallback((url: string) => {
     //clear any pending reconnect
     if (reconnectTimeout.current) {
@@ -69,19 +85,11 @@ export const useWebSocket = (initialUrl: string, options: UseWebSocketOptions = 
         setIsConnected(false);
       };
 
-      ws.current.onmessage = (event) => {
-        try {
-          const parsed: WebSocketMessage = JSON.parse(event.data);
-          onMessage?.(parsed);
-        } catch {
-          console.error('Failed to parse WebSocket message:', event.data);
-        }
-      };
     } catch (error) {
       console.error('WebSocket connection failed:', error);
       setIsConnected(false);
     }
-  }, [onMessage, reconnect, reconnectDelayMs, maxReconnectAttempts]);
+  }, [reconnect, reconnectDelayMs, maxReconnectAttempts]);
 
   //connect on mount / when url changes
   useEffect(() => {
