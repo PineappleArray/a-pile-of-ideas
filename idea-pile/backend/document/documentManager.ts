@@ -67,6 +67,7 @@ export class DocumentManager {
       }
       const session = new DocumentSession(documentId, content);
       this.sessions.set(documentId, session);
+      console.log(this.sessions);
       return session;
     }
   }
@@ -77,7 +78,8 @@ export class DocumentManager {
     const session = await this.getOrCreateSession(documentId, initialContent);
     session.addUser(userId, connection);
     this.userToDocument.set(userId, documentId);
-  return session;
+    console.log(`${this.userToDocument.size} users in ${this.sessions.size} sessions`);
+    return session;
   }
 
   //removes a user from the session and saves a snapshot if no users are left
@@ -119,6 +121,7 @@ public async handleOperation(userId: string, message: DeltaMessage): Promise<{ v
   //update a user's cursor position
   public updateCursor(userId: string, cursor: { x: number; y: number }): void {
     const docId = this.userToDocument.get(userId);
+    console.log(`Updating cursor for user ${userId} in document ${docId} to position (${cursor.x}, ${cursor.y})`);
     if(docId){
         this.getSession(docId)?.updateCursor(userId, cursor);
     }

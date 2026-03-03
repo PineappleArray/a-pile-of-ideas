@@ -1,5 +1,5 @@
 "use client";
-import React, { use, useState } from 'react';
+import React, { use, useCallback, useState } from 'react';
 import Tool from './tools/tools'; // Assuming Tool type is defined elsewhere in your project
 import onCanvasClick from './tools/textbox';
 import { useEffect, useRef } from 'react';
@@ -7,11 +7,7 @@ import text, { stickyNote } from '../shared/notes'
 import { findOverlaps } from './stickyNote';
 import { useWebSocket, WebSocketClient } from './hooks/useWebSocket';
 import TextTool from './tools/textTool';
-import { fa } from 'zod/locales';
-import { set } from 'mongoose';
-
-// TopBar.jsx
-// Tailwind-ready React component. Default-exported so you can drop it into a Next.js / Create React App project.
+import { set, throttle } from 'lodash';
 
 type ToolBarProps = {
   onToolChange?: (tool: string) => void;
@@ -19,6 +15,8 @@ type ToolBarProps = {
   wsClient?: WebSocketClient;
   documentId?: string;
 };
+
+
 const instanceTool = new TextTool('', {x:0,y:0});
 const userId = Math.random().toString(36).substring(2, 15); // Placeholder user ID, replace with actual user management logic
 
@@ -27,22 +25,32 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
   const mouseDownPos = useRef<{ x: number; y: number } | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [notes, setNotes] = useState<Map<string, stickyNote>>(new Map<string, stickyNote>());
-  const [cursors, setCursors] = useState<Map<string, { x: number; y: number, id: string }>>(new Map()); // Map of userId to cursor position
+  //const [cursors, setCursors] = useState<Map<string, {x: number, y: number}>>(new Map()); // Map of userId to cursor position
+  const cursorElements = useRef<Map<string, HTMLElement>>(new Map());
 
-  //This will make a map that will hold all the text objects linked to their id
-  //using map for O(1) indexing
-  const textMap = new Map<string, text>();   
+  function cursor(cursor: { x: number; y: number }) {
+  let cursorEl = document.getElementById(`cursor-${userId}`);
+      if (cursorEl) {
+        cursorEl.style.left = `${cursor.x}px`;
+        cursorEl.style.top = `${cursor.y}px`;
+      } else {
+        cursorEl = document.createElement('div');
+        cursorEl.id = `cursor-${userId}`;
+        cursorEl.style.position = 'absolute';
+        cursorEl.style.width = '10px';
+        cursorEl.style.height = '10px';
+        cursorEl.style.borderRadius = '50%';
+        //cursorEl.style.backgroundColor = '#1500ff';
+        cursorEl.style.opacity = '0.5';
+        cursorEl.textContent = `USER`;
+        cursorEl.style.fontSize = '20px';
+        cursorEl.style.color = '#1500ff';
+        document.body.appendChild(cursorEl);
+      }
+    }
 
-  //This will change the tools that are selected
-  function handleTool(tool: string) {
-    setActive(tool);
-    if (onToolChange) onToolChange(tool);
-  }
-
-  const btnBase = 'inline-flex items-center gap-2 px-3 py-2 rounded-2xl text-sm font-medium transition-shadow focus:outline-none focus:ring-2 focus:ring-offset-2';
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const handleWebSocketMessage = (message: any) => {
+    const handleWebSocketMessage = useCallback((message: any) => {
+    console.log("TM message type:", message.type);
     switch (message.type) {
       // Sticky note operations
       case 'create-sticky-note':
@@ -67,19 +75,18 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
         })
         break
 
-      // User presence
+      //jser joined or left, update cursors
       case 'user-joined':
         console.log('user joined:', message.userId)
-        setCursors(prev => new Map(prev).set(message.userId, { x: message.x, y: message.y, id: message.userId }))
+        
         break
 
       case 'user-left': 
-        console.log('user left:', message.userId)
-        setCursors(prev => {
-          const next = new Map(prev)
-          next.delete(message.userId)
-          return next
-        })
+        const cursorEl = cursorElements.current.get(message.userId);
+        if (cursorEl) {
+          cursorEl.remove();
+          cursorElements.current.delete(message.userId);
+        }
         break
 
       // Document operations
@@ -96,7 +103,7 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
       // User interactions
       case 'cursor':
         console.log('Cursor update from', message.userId, ':', message.cursor)
-        // TODO: Update cursor position for user
+        cursor(message.cursor);
         break
 
       case 'move':
@@ -119,34 +126,33 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
       default:
         console.warn('Unknown message type:', message.type, message)
     }
-  }
+  }, []);
 
   const { send, isConnected } = useWebSocket('ws://localhost:8080', {
     onMessage: handleWebSocketMessage
   })
 
-  useEffect(() => {
-    cursors.forEach((cursor, userId) => {
-      let cursorEl = document.getElementById(`cursor-${userId}`);
-      if (cursorEl) {
-        cursorEl.style.left = `${cursor.x}px`;
-        cursorEl.style.top = `${cursor.y}px`;
-      } else {
-        cursorEl = document.createElement('div');
-        cursorEl.id = `cursor-${userId}`;
-        cursorEl.style.position = 'absolute';
-        cursorEl.style.width = '10px';
-        cursorEl.style.height = '10px';
-        cursorEl.style.borderRadius = '50%';
-        //cursorEl.style.backgroundColor = '#1500ff';
-        cursorEl.style.opacity = '0.5';
-        cursorEl.textContent = `USER`;
-        cursorEl.style.fontSize = '8px';
-        cursorEl.style.color = '#1500ff';
-        document.body.appendChild(cursorEl);
-      }
-    });
-  }, [cursors]);
+useEffect(() => {
+  if (!documentId || !isConnected) return;
+  send({
+    type: 'user-joined',
+    userId,
+    documentId
+  });
+}, [documentId, isConnected]);
+
+  //This will make a map that will hold all the text objects linked to their id
+  //using map for O(1) indexing
+  const textMap = new Map<string, text>();   
+
+  //This will change the tools that are selected
+  function handleTool(tool: string) {
+    setActive(tool);
+    if (onToolChange) onToolChange(tool);
+  }
+
+  const btnBase = 'inline-flex items-center gap-2 px-3 py-2 rounded-2xl text-sm font-medium transition-shadow focus:outline-none focus:ring-2 focus:ring-offset-2';
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -161,7 +167,7 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
 
       const startX = event.clientX - target.offsetLeft
       const startY = event.clientY - target.offsetTop
-      console.log(`Mouse down on ${target.id} at (${event.clientX}, ${event.clientY}), startX: ${startX}, startY: ${startY}`)
+      //console.log(`Mouse down on ${target.id} at (${event.clientX}, ${event.clientY}), startX: ${startX}, startY: ${startY}`)
       let isDragging = false
 
       const onMouseMove = (e: MouseEvent) => {
@@ -208,8 +214,6 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
 
       // Use mousedown position instead of click position
       const origin = mouseDownPos.current ?? { x: event.clientX, y: event.clientY }
-  
-      setCursors(prev => new Map(prev).set(userId, { x: 100, y: 100, id: userId}))
 
       const rect = container.getBoundingClientRect();
       const x = origin.x - rect.left - 10;
@@ -306,6 +310,23 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
       container.removeEventListener('mousedown', handleClick);
     };
   }, [wsClient, documentId, notes, userId]);   //dependency array includes notes to ensure it has the latest state when checking for overlaps
+
+  //send cursor position on mouse move, throttled to 100ms to reduce network traffic
+  document.addEventListener('mousemove', throttle((e: MouseEvent) => {
+    if (wsClient && documentId) {
+          //console.log('Sending cursor message for', e.clientX, e.clientY);
+          wsClient.send({
+            type: 'cursor',
+            userId,
+            cursor: {
+              x: e.clientX,
+              y: e.clientY,
+            },
+          });
+        }
+    //console.log(e.clientX, e.clientY);
+  }, 100));
+
 
   return (
     <>

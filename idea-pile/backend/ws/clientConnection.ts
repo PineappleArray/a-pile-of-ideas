@@ -45,7 +45,9 @@ export class ClientConnection implements IClientConnection{
   public send(message: any): void {
     if (this.ws.readyState === WebSocket.OPEN) {
       try {
+        console.log("CC sending message:", message);
         this.ws.send(JSON.stringify(message));
+        console.log("send completed without error");
       } catch (error) {
         console.error('Error sending message:', error);
       }

@@ -192,6 +192,8 @@ export class DocumentSession {
     
     if (!user) {
       throw new Error("INVALID USERID, USERID NOT FOUND");
+    } else {
+      console.log('UPDATE')
     }
     
     user.cursor = cursor;
@@ -230,6 +232,7 @@ export class DocumentSession {
     for (const [userId, user] of this.users) {
       if (userId !== excludeUserId) {
         user.connection.send(message);
+        console.log(userId + " sent message: " + JSON.stringify(message));
       }
     }
   }
