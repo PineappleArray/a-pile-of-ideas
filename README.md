@@ -10,10 +10,25 @@ In the occurance of multiple simultaneous edits the edits will be transformed ag
 DISCLAIMER (FRONTEND SET TO BE COMPLETELY RESTRUCTURED TO AVOID TECHNICAL DEBT)
 
 FRONTEND: 
-The frontend is built with React and Next.js using TypeScript. I chose to have optimistic UI rendering as it will allow for a smoother user experience and less latency then if the changes were validated first on the server. The key challenge was providing instant feedback while maintaining sync across multiple users. The tools are currently textbox creation and the ability to draw on the whiteboard (WIP) as well as having a super class of data so data can be interacted with interchangably.
+The frontend is built with React and Next.js using TypeScript. React was chosen 
+for its predictable unidirectional data flow, which simplifies state management 
+across a component tree that updates in real time. TypeScript adds compile-time 
+type safety, catching integration errors between the frontend and WebSocket 
+message contracts before they reach production.
+
+The UI uses optimistic rendering where changes are reflected immediately on the client 
+before server confirmation, reducing perceived latency and creating a smoother 
+collaborative experience. The key engineering challenge was maintaining consistency 
+across multiple concurrent users while keeping the local state and server state in 
+sync. This was handled through a WebSocket connection that broadcasts state changes 
+to all connected clients in the same document session.
+
+Current tools include sticky note creation, text editing, and drag-to-reposition 
+functionality, with the architecture designed to support additional real time 
+collaborative features.
 
 For state management, I structured it in three layers: (Currently a WIP/Plan for frontend)
-First, document state using useReducer - this holds the content, version number,
+First, document state using useReducer, this holds the content, version number,
 and any pending operations that haven't been confirmed by the server yet.
 Second, connection state with useState tracking the WebSocket connection,
 user session, and connection health.
