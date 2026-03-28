@@ -17,7 +17,6 @@ type ToolBarProps = {
   documentId?: string;
 };
 
-
 const instanceTool = new TextTool('', {x:0,y:0});
 const userId = Math.random().toString(36).substring(2, 15); // Placeholder user ID, replace with actual user management logic
 
@@ -82,33 +81,36 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
 
       // User interactions
       case 'cursor':
-        console.log('Cursor update from', message.userId, ':', message.cursor)
         const uId = message.userId;
         const cursorPos: { x: number; y: number } = message.cursor;
-        console.log('Current cursor elements:', Array.from(cursorElements.current.keys()));
-        let cursorEl = document.getElementById(`cursor-${uId}`);
+        console.log('Cursor update from', uId, ':', cursorPos)
+        let cursorEl = cursorElements.current.get(uId); // ✅ use the ref Map, not getElementById
+
         if (!cursorEl) {
-          console.log('Creating cursor element for user', uId);
           cursorEl = document.createElement('div');
           cursorEl.id = `cursor-${uId}`;
-          cursorEl.style.position = 'fixed';
-          cursorEl.style.pointerEvents = 'none';
-          cursorEl.style.transform = `translate(${cursorPos.x}px, ${cursorPos.y}px)`;
-          cursorEl.textContent = uId;
-          cursorEl.style.minWidth = '20px';
-          cursorEl.style.minHeight = '20px';
-          cursorEl.style.backgroundColor = 'rgba(0, 0, 255, 0.7)';
-          cursorEl.style.color = '#ff0000';
-          cursorEl.style.fontSize = '12px';
-          cursorEl.style.zIndex = '99999';
+          cursorEl.style.cssText = `
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            pointer-events: none;
+            min-width: 20px;
+            min-height: 20px;
+            background-color: rgba(0, 0, 255, 0.7);
+            color: #ff0000;
+            font-size: 16px;
+            z-index: 99999;
+            transition: transform 0.1s linear;
+          `;
+          
+          cursorEl.textContent = "USER";
           document.body.appendChild(cursorEl);
           cursorElements.current.set(uId, cursorEl);
-        } else {
-          console.log('Updating cursor position for user', uId, 'to:', cursorPos);
-          cursorEl.style.transform = `translate(${cursorPos.x}px, ${cursorPos.y}px)`;
         }
-      break
-
+        cursorEl.style.transform = `translate(${cursorPos.x * window.innerWidth}px, ${cursorPos.y * window.innerHeight}px)`;
+        console.log('Updated cursor position for', uId)
+        console.log(cursorElements.current) // Log the current state of cursorElements
+        break;
       case 'move':
         console.log('Move from', message.userId, 'to:', message.x, message.y)
         // TODO: Update element position for user
@@ -321,7 +323,7 @@ useEffect(() => {
         wsClient.send({
           type: 'cursor',
           userId,
-          cursor: { x: e.clientX, y: e.clientY },
+          cursor: { x: e.clientX / window.innerWidth, y: e.clientY / window.innerHeight },
         });
       }
     }, 100);
