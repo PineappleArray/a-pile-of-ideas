@@ -20,7 +20,7 @@ export class Gateway {
         break
       case 'create-sticky-note':
         console.log('-Received create sticky note message:', message);
-        // TODO: Broadcast to other users in the document
+        this.docManager.createStickyNote(message.userId, message.targetId, message.x, message.y, message.docId);
         break
       case 'update-sticky-note':
         console.log('-Received update sticky note message:', message);

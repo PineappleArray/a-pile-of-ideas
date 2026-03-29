@@ -123,7 +123,14 @@ public async handleOperation(userId: string, message: DeltaMessage): Promise<{ v
     const docId = this.userToDocument.get(userId);
     console.log(`Updating cursor for user ${userId} in document ${docId} to position (${cursor.x}, ${cursor.y})`);
     if(docId){
-        this.getSession(docId)?.updateCursor(userId, cursor);
+      this.getSession(docId)?.updateCursor(userId, cursor);
+    }
+  }
+
+  public createStickyNote(userId: string, noteId: string, x: number, y: number, docId: string): void {
+    console.log(`Creating sticky note ${noteId} for user ${userId} in document ${docId} at position (${x}, ${y})`);
+    if(docId){
+        this.getSession(docId)?.createSticky(userId, { x, y }, noteId);
     }
   }
 

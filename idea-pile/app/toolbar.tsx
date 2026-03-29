@@ -18,7 +18,7 @@ type ToolBarProps = {
 };
 
 const instanceTool = new TextTool('', {x:0,y:0});
-const userId = Math.random().toString(36).substring(2, 15); // Placeholder user ID, replace with actual user management logic
+const userId = Math.random().toString(36).substring(2, 15); //Placeholder user ID, replace with actual user management logic
 
 export default function ToolBar({ onToolChange, useTool, wsClient, documentId }: ToolBarProps) {
   const [active, setActive] = useState('select');
@@ -26,18 +26,19 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
   const [isEditing, setIsEditing] = useState(false);
   const [notes, setNotes] = useState<Map<string, stickyNote>>(new Map<string, stickyNote>());
   //const [cursors, setCursors] = useState<Map<string, {x: number, y: number}>>(new Map()); // Map of userId to cursor position
-  const cursorElements = useRef<Map<string, HTMLElement>>(new Map());
+  const cursorElements = useRef<Map<string, HTMLElement>>(new Map()); //ref used due to its mutability and to avoid re-renders when cursors update
 
     const handleWebSocketMessage = useCallback((message: any) => {
-    console.log("TM message type:", message.type, "to: ",userId);
+      console.log("TM message type:", message.type, "to: ",userId);
+      console.log(notes)
     switch (message.type) {
-      // Sticky note operations
       case 'create-sticky-note':
+        console.log('!Creating sticky note with id:', message.id, 'at:', message.centerX, message.centerY)
         setNotes(prev => new Map(prev).set(message.id, new stickyNote(
-          message.centerX,
-          message.centerY,
-          message.id,
-          message.content,
+          message.location.x,
+          message.location.y,
+          message.stickyId,
+          "",
           -1,
           -1,
           message.width,
@@ -83,8 +84,8 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
       case 'cursor':
         const uId = message.userId;
         const cursorPos: { x: number; y: number } = message.cursor;
-        console.log('Cursor update from', uId, ':', cursorPos)
-        let cursorEl = cursorElements.current.get(uId); // ✅ use the ref Map, not getElementById
+        //console.log('Cursor update from', uId, ':', cursorPos)
+        let cursorEl = cursorElements.current.get(uId);
 
         if (!cursorEl) {
           cursorEl = document.createElement('div');
@@ -108,8 +109,8 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
           cursorElements.current.set(uId, cursorEl);
         }
         cursorEl.style.transform = `translate(${cursorPos.x * window.innerWidth}px, ${cursorPos.y * window.innerHeight}px)`;
-        console.log('Updated cursor position for', uId)
-        console.log(cursorElements.current) // Log the current state of cursorElements
+        //console.log('Updated cursor position for', uId)
+        //console.log(cursorElements.current) // Log the current state of cursorElements
         break;
       case 'move':
         console.log('Move from', message.userId, 'to:', message.x, message.y)
@@ -186,11 +187,12 @@ useEffect(() => {
         target.style.top = e.clientY - startY + 'px'
 
         if (wsClient && documentId) {
-          console.log('Sending create-sticky-note message for', target);
+          console.log('Sending create-sticky-note message for', target, 'userId:', userId, 'documentId:', documentId);
           wsClient.send({
             type: 'create-sticky-note',
-            documentId,
-            id: target.id,
+            docId: documentId,
+            targetId: target.id,
+            userId: userId,
             x: parseInt(target.style.left),
             y: parseInt(target.style.top),
             width: parseInt(target.style.width),
