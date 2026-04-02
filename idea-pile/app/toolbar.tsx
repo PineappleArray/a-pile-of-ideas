@@ -30,21 +30,21 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
 
     const handleWebSocketMessage = useCallback((message: any) => {
       console.log("TM message type:", message.type, "to: ",userId);
-      console.log(notes)
+      console.log(message)
     switch (message.type) {
       case 'create-sticky-note':
-        console.log('!Creating sticky note with id:', message.id, 'at:', message.centerX, message.centerY)
-        setNotes(prev => new Map(prev).set(message.id, new stickyNote(
-          message.location.x,
-          message.location.y,
+        console.log('!Creating sticky note with id:', message.id, 'at:', message.x, message.y)
+        setNotes(prev => new Map(prev).set(message.stickyId, new stickyNote(  // ← was message.id
+          message.x,
+          message.y,
           message.stickyId,
           "",
           -1,
           -1,
-          message.width,
+          message.width,   // ← also undefined, server doesn't send these
           message.height
         )))
-        break
+  break
 
       case 'update-sticky-note':
         setNotes(prev => { 
@@ -264,8 +264,9 @@ useEffect(() => {
             console.log('Sending create-sticky-note message for', boxId);
             wsClient.send({
               type: 'create-sticky-note',
-              documentId,
-              id: boxId,
+              docId: documentId,
+              boxId: boxId,
+              userId: userId,
               x,
               y,
               width,

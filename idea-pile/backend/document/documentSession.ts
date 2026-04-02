@@ -90,15 +90,17 @@ export class DocumentSession {
     }
   }
 
-  public createSticky(userId :string, location: { x: number; y: number }, stickyId: string): void {
+  public createSticky(userId :string,  x: number, y: number , stickyId: string): void {
     if (this.content[stickyId]) {
       throw new Error("STICKY ID ALREADY EXISTS");
     } else {
-      this.content[stickyId] = new stickyNote(location.x, location.y, stickyId, "", 800, 600, 100, 100);
+      this.content[stickyId] = new stickyNote(x, y, stickyId, "", 800, 600, 100, 100);
+      console.log(`createSticky Created sticky note ${stickyId} at position (${x}, ${y})`);
       this.broadcastToOthers(userId, {
       type: 'create-sticky-note',
       userId,
-      location: location,
+      x: x,
+      y: y,
       stickyId: stickyId
     });
     }

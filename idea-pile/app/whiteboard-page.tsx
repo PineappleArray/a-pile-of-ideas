@@ -18,7 +18,7 @@ export default function WhiteboardPage() {
     
     // WebSocket connection - connect to localhost:8080 (adjust URL as needed)
     const wsClient = useWebSocket('ws://localhost:8080');
-    const documentId = 'default-document'; // Use your actual document ID
+    const documentId = 'default-document'; 
 
   function handleToolAction(x: number, y: number, e: React.MouseEvent<HTMLDivElement>){
     // Route click to the currently selected tool

@@ -130,7 +130,7 @@ public async handleOperation(userId: string, message: DeltaMessage): Promise<{ v
   public createStickyNote(userId: string, noteId: string, x: number, y: number, docId: string): void {
     console.log(`Creating sticky note ${noteId} for user ${userId} in document ${docId} at position (${x}, ${y})`);
     if(docId){
-        this.getSession(docId)?.createSticky(userId, { x, y }, noteId);
+      this.getSession(docId)?.createSticky(userId,  x, y, noteId);
     }
   }
 
