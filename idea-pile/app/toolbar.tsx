@@ -33,8 +33,8 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
       console.log(message)
     switch (message.type) {
       case 'create-sticky-note':
-        console.log('!Creating sticky note with id:', message.id, 'at:', message.x, message.y)
-        setNotes(prev => new Map(prev).set(message.stickyId, new stickyNote(  // ← was message.id
+        console.log('!Creating sticky note with id:', message.stickyId, 'at:', message.x, message.y)
+        setNotes(prev => new Map(prev).set(message.stickyId, new stickyNote(
           message.x,
           message.y,
           message.stickyId,
@@ -44,6 +44,30 @@ export default function ToolBar({ onToolChange, useTool, wsClient, documentId }:
           message.width,   // ← also undefined, server doesn't send these
           message.height
         )))
+        const container = containerRef.current;
+        if (container) {
+          const newArea = document.createElement('textarea');
+
+          // Style it
+          newArea.style.width = 200 + 'px';
+          newArea.style.height = 100 + 'px';
+          newArea.style.backgroundColor = 'white';
+          newArea.style.position = 'absolute';
+          newArea.style.resize = 'both';
+          newArea.style.border = '2px solid black';
+          newArea.style.overflowY = 'hidden';
+          newArea.id = message.stickyId;
+
+          // Position it at the click coordinates
+          newArea.style.left = message.x + 'px';
+          newArea.style.top = message.y + 'px';
+
+          // Add it to the container
+          container.appendChild(newArea);
+          newArea.focus();
+          const textObj = new text(message.x, message.y, message.stickyId, "", -1, -1, message.width, message.height);
+          textMap.set(message.stickyId, textObj);
+        }
   break
 
       case 'update-sticky-note':
