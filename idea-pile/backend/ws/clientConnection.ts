@@ -1,15 +1,23 @@
 //Represents a single WebSocket connection to a client
  
-import { WebSocket } from 'ws';
+// Avoid importing the `WebSocket` constructor from 'ws' directly in tests
+// which may not export the same symbol. Use a flexible WebSocketLike type.
 import { Delta } from '../../delta/delta';
 import { IClientConnection } from './IClient';
 
+type WebSocketLike = {
+  send(data: string): void;
+  close(code?: number, reason?: string): void;
+  readyState: number;
+  on(event: string, listener: (...args: any[]) => void): void;
+}
+
 export class ClientConnection implements IClientConnection{
-  private ws: WebSocket;
+  private ws: WebSocketLike;
   private userId?: string;
   private documentId?: string;
 
-  constructor(ws: WebSocket) {
+  constructor(ws: WebSocketLike) {
     this.ws = ws;
   }
 
@@ -37,7 +45,9 @@ export class ClientConnection implements IClientConnection{
   public send(message: any): void {
     if (this.ws.readyState === WebSocket.OPEN) {
       try {
+        //console.log("CC sending message:", message);
         this.ws.send(JSON.stringify(message));
+        console.log("send completed without error");
       } catch (error) {
         console.error('Error sending message:', error);
       }

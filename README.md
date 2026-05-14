@@ -1,59 +1,127 @@
-This project is a full stack website that mimics google docs with multiple users edit functionality and version control. The stack of this project is TypeScript and Next.js with TypeScript being chosen for its type safety and Next.js chosen due to its fast server side rendering as well as single framework for a server and client; perfect for collaborative edits and quick development. The algorithm that was chosen was the industry standard operational transformer, due to its ability to execute edits in a deterministic way to ensure sync with multiple users. The transformer works by being fed a delta which is a list of operations stored in this manner:
-```
-type DeltaOp = 
+# A Pile of Ideas
+
+A real-time collaborative whiteboard with Google Docs–style version control and multi-user editing. Built with TypeScript and Next.js, powered by Operational Transformation (OT).
+
+## Overview
+
+A Pile of Ideas is a full-stack application that lets multiple users simultaneously edit a shared whiteboard canvas. Every edit is tracked, transformed, and persisted — giving you the collaborative feel of Google Docs applied to a freeform idea space with text boxes and drawing tools.
+
+The core synchronization engine uses **Operational Transformation**, the same class of algorithm behind Google Docs, to deterministically resolve concurrent edits across users without conflicts.
+
+## Tech Stack
+
+| Layer | Technology | Why |
+|-------|-----------|-----|
+| Language | TypeScript | Type safety across the entire stack |
+| Framework | Next.js (React) | SSR, unified client/server, fast iteration |
+| Real-time | WebSockets (`ws`) | Low-latency bidirectional communication |
+| Short-term storage | Redis (`ioredis`) | In-memory speed for edits and temp logs; auto-cleanup |
+| Long-term storage | MongoDB (`mongodb`) | Persistent, document-oriented storage for snapshots |
+| Validation | Zod | Runtime schema validation |
+| Compression | Pako | Delta compression for efficient transport |
+| Infrastructure | Docker | Consistent, reproducible environments |
+
+## Architecture
+
+### Operational Transformation
+
+Edits are represented as **deltas** — ordered lists of operations:
+
+```typescript
+type DeltaOp =
   | { type: 'retain'; count: number }
   | { type: 'insert'; text: string }
   | { type: 'delete'; count: number };
 ```
-In the occurance of multiple simultaneous edits the edits will be transformed against each other in a predetermined order before being executed on the document.
 
-FRONTEND: 
-The frontend is built with React and Next.js using TypeScript. I chose to have optimistic UI rendering as it will allow for a smoother user experience and less latency then if the changes were validated first on the server. The key challenge was providing instant feedback while maintaining sync across multiple users. The tools are currently textbox creation and the ability to draw on the whiteboard (WIP) as well as having a super class of data so data can be interacted with interchangably.
+When two users edit simultaneously, their operations are **transformed** against each other in a deterministic order before being applied to the document. This guarantees all clients converge to the same state regardless of network timing.
 
-For state management, I structured it in three layers: (Currently a WIP/Plan for frontend)
-First, document state using useReducer - this holds the content, version number,
-and any pending operations that haven't been confirmed by the server yet.
-Second, connection state with useState tracking the WebSocket connection,
-user session, and connection health.
-Third, collaboration state with Context API managing active users, cursor
-positions, and presence indicators across the whole component tree.
-The WebSocket connection is managed through a custom useWebSocket hook that
-handles reconnection, message passing, and error recovery automatically.
-For performance, I implemented several optimizations: debounced cursor updates
-to reduce network traffic, React.memo for collaboration indicators to avoid
-unnecessary re-renders, and virtual scrolling for large documents.
+### Backend
 
-BACKEND:
-The backend is hosted on Docker and is single threaded as multi threading would introduce race conditions and complex locking mechanisms. The single threaded event loop prevents these issues while Next.js handles concurrency naturally. The databases that are utilized are mongoDB for storing snapshots and the complete contents of a file and Redis for storing user edits and temporary document logs. The reasoning behind using mongoDB for storing larger more permanent data is due to its NoSQL and document friendly nature, perfect for storing complex objects like entire files composed of multiple objects in a time and space efficient manner. The reason I chose Redis for storing edits is its quick query times, its ability to handle a high number of edits, and its auto cleanup feature, along with the benefits of being stored on RAM. The reason I chose mongoDB for storing long term data is its space efficiency over Redis and the fact crashes will cause Redis to lose memory, Redis stores data in RAM, making it volatile. MongoDB provides durability through persistent disk storage. Losing operations between snapshots is an acceptable trade-off for the architectural simplicity. In addition to that, while Redis can have methods for data presistence in the event of crashes either periodic data snapshots or append only files they would only introduce unnecessary complexity. WebSockets are used to provide persistent, bidirectional communication between the frontend and backend. This approach was selected to support low latency transmission and high volumes of real time signals. The approach of utilizing WebSockets has been validated from the unit test PerformanceWSMongo, where it was shows for the most utilized operations of applying and processing operations without taking into account creating the WebSocket it is around 4x faster then using WebHooks.
+The server runs on a **single-threaded event loop** by design. Multi-threading would introduce race conditions and complex locking — the single-threaded model avoids these entirely while Next.js handles concurrency naturally.
 
-File Structure:
+**Dual-database strategy:**
+
+- **Redis** handles the hot path: buffering user edits, storing temporary document logs, and managing session state. Its in-memory nature gives sub-millisecond reads, and built-in TTL keeps storage tidy. The trade-off is volatility — data lives in RAM and is lost on crash.
+- **MongoDB** handles the cold path: persisting document snapshots and complete file contents. Its document-oriented model maps naturally to the application's data structures. Disk-backed storage means data survives crashes, even if some operations between snapshots are lost (an acceptable trade-off for architectural simplicity).
+
+**WebSockets** provide the real-time communication layer. Benchmarking showed that for the most common operations (applying and processing edits), WebSockets are roughly **4× faster** than a webhook-based approach once connection overhead is excluded.
+
+### Frontend
+
+Built with React and Next.js, the frontend uses **optimistic UI rendering** — changes appear instantly in the editor before server confirmation, minimizing perceived latency.
+
+**State management** is planned across three layers:
+
+1. **Document state** (`useReducer`) — content, version number, pending unconfirmed operations
+2. **Connection state** (`useState`) — WebSocket status, user session, connection health
+3. **Collaboration state** (Context API) — active users, cursor positions, presence indicators
+
+Performance optimizations include debounced cursor updates, `React.memo` for collaboration indicators, and virtual scrolling for large documents.
+
+### Tools
+
+The whiteboard currently supports **text box creation** and a **freehand drawing tool** (WIP). Data models use a shared superclass so different object types can be interacted with interchangeably.
+
+## Project Structure
+
 ```
 idea-pile/
 ├── backend/
-│   ├── document/        # DocumentManager & DocumentSession (manages document instances)
-│   ├── ot/              # Operation Transformers (OT logic)
-│   ├── storage/         # Redis (short term) & MongoDB (persistent)
-│   └── ws/              # WebSocket handling and client connections
+│   ├── document/        # DocumentManager & DocumentSession
+│   ├── ot/              # Operational Transformation logic
+│   ├── storage/         # Redis (short-term) & MongoDB (persistent)
+│   └── ws/              # WebSocket handling & client connections
 │
-├── delta/               # Universal delta structure (shared frontend/backend)
+├── delta/               # Shared delta types (used by both frontend & backend)
 │
-└── app/                 # Frontend logic
+└── app/                 # Frontend
     ├── tools/           # Text editing & drawing tools (WIP)
     └── models/          # Sticky note and data models (WIP)
 ```
 
-```
-Operation                      In-Memory   MongoDB + Webhooks   WebSocket + MongoDB  
-Single operation apply         0.004 ms    14 ms                14 ms                 
-Real-time broadcast (50 users) 0.002 ms    N/A                  2.86 ms               
-Snapshot save (single)         N/A         15-27 ms             15-27 ms            
-Cursor update                  0.004 ms    N/A                  13 ms             
-Session recovery               N/A         16 ms                27 ms        
-```
-Note: These are under test conditions on servers hosted on Docker for consistency with in memory being a Redis server and map for snapshot storage, while MongoDB and Webhooks are comprised of a Redis and MongoDB server.
+## Performance Benchmarks
 
-While it may seem that WebSockets are a sub optimal choice in terms of efficiency when subtracting the overhead required to make a connection WebSockets are around 4x faster in terms of applying operations.
+Measured under Docker for consistency (Redis for in-memory, MongoDB + Webhooks for persistent storage):
 
-WIP:
-Finish the frontend
-Change OT to work better on text boxes
+| Operation | In-Memory | MongoDB & Webhooks | Trade-off |
+|-----------|-----------|-------------------|-----------|
+| Session Creation (100 sessions) | 0.18 ms | 0.20 ms | 1.1× |
+| Document Operations (1000 ops) | 3.83 ms | 878.54 ms | 229× |
+| Broadcasting (50 users) | 0.11 ms | 0.12 ms | 1.1× |
+| Snapshot Loading (50 snaps) | 0.25 ms | 3.56 ms | 14.5× |
+| User Join/Leave (200 users) | 3.73 ms | 21.95 ms | 5.9× |
+
+> The standout result is **document operations** — in-memory processing is **229× faster** than the MongoDB + Webhooks path at scale (1000 ops). Session creation and broadcasting show near-parity, while snapshot loading and user churn see moderate overhead from persistence.
+
+## Prerequisites
+
+- Node.js
+- Docker (for Redis and MongoDB containers)
+
+## Getting Started
+
+```bash
+# Clone the repository
+git clone https://github.com/PineappleArray/a-pile-of-ideas.git
+cd a-pile-of-ideas
+
+# Install dependencies
+npm install
+
+# Start the development environment
+# (ensure Docker containers for Redis and MongoDB are running)
+npm run dev
+```
+
+## Roadmap
+
+- [ ] Complete the frontend UI
+- [ ] Refine OT algorithm for text box–specific editing
+- [ ] Drawing tool polish
+- [ ] User presence indicators and cursor sharing
+- [ ] Version history browser
+
+## License
+
+MIT — see [LICENSE](./LICENSE) for details.

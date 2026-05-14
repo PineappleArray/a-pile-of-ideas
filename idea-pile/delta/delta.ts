@@ -5,7 +5,7 @@
 //that the action is impacting so RETAIN(10), DELETE(5) would retain the first 10 characters
 //of a string before deleting the 5 subsequent characters
 export type DeltaOp = 
-  | { type: 'retain'; count: number }
+  | { type: 'retain'; count: number; }
   | { type: 'insert'; text: string; attributes?: Record<string, any> }
   | { type: 'delete'; count: number };
 
@@ -47,12 +47,25 @@ export interface VersionStore {
   snapshotInterval: number;
 }
 
-//a edit on a document
-export interface DeltaMessage {
-  docId: string;
+export interface BaseMessage {
+  docId: string; //a unique id for this edit that is used to track it across the system
+  stickyId: string;
   baseVersion: number;
+  type: string;
+}
+
+//a edit on a sticky note in doc
+export interface DeltaMessage extends BaseMessage {
+  type: 'delta';
   ops: DeltaOp[];
 }
+
+export interface TransformMessage extends BaseMessage {
+  type: 'transform';
+  ops: TransformOp[];
+}
+
+export type Message = DeltaMessage | TransformMessage;
 
 //merges multiple edits if they are the same type
 //to save space

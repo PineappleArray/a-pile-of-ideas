@@ -1,5 +1,6 @@
-import { Delta, DeltaMessage, Version, normalizeDelta, DeltaOp } from '../../delta/delta'; // adjust path
-import { transform, apply, compose, transformAgainstSequence } from '../ot/operationalTransformation';
+import stickyNote from '../../shared/notes';
+import { Delta, DeltaMessage, Version, normalizeDelta, DeltaOp, Message, TransformMessage, Transform, TransformOp, normalizeTransform } from '../../delta/delta'; // adjust path
+import { transform, apply, compose, transformAgainstSequence, applyTransform } from '../ot/operationalTransformation';
 import { ClientConnection } from '../ws/clientConnection';
 import { IClientConnection } from '../ws/IClient';
 
@@ -11,7 +12,7 @@ export interface User {
   userId: string;
   version: number;  //What version of the document this user has
   joinedAt: number;
-  cursor: { line: number; ch: number } | null;
+  cursor: { x: number; y: number } | null;
 }
 
 export interface HistoricalDelta {
@@ -23,14 +24,14 @@ export interface HistoricalDelta {
 
 export class DocumentSession {
   private documentId: string;
-  private content: string;
+  private content: Record<string, stickyNote>;
   private version: number;
-  private users: Map<string, User>;
+  private users: Map<string, User>; 
   private deltaHistory: HistoricalDelta[];
   private maxHistorySize: number;
 
   //Makes a base document from the id and the content
-  constructor(documentId: string, initialContent: string = '') {
+  constructor(documentId: string, initialContent: Record<string, stickyNote> = {}) {
     this.documentId = documentId;
     this.version = 0;
     this.users = new Map();
@@ -79,48 +80,86 @@ export class DocumentSession {
     return this.users.size === 0;
   }
 
+  private moveSticky(move: TransformMessage): void {
+    if (!this.content[move.stickyId]) {
+      throw new Error("INVALID STICKY ID");
+    } else { 
+      const normalized = normalizeTransform({ ops: move.ops });
+      const movedContent = applyTransform(this.content[move.stickyId], normalized);
+      
+    }
+  }
+
+  public createSticky(userId :string,  x: number, y: number , stickyId: string): void {
+    if (this.content[stickyId]) {
+      throw new Error("STICKY ID ALREADY EXISTS");
+    } else {
+      this.content[stickyId] = new stickyNote(x, y, stickyId, "", 800, 600, 100, 100);
+      console.log(`createSticky Created sticky note ${stickyId} at position (${x}, ${y})`);
+      this.broadcastToOthers(userId, {
+      type: 'create-sticky-note',
+      userId,
+      x: x,
+      y: y,
+      stickyId: stickyId
+    });
+    }
+  }
+
   //apply a delta operation from a client
-  public applyDelta(userId: string, message: DeltaMessage): { version: number; delta: Delta } | null {
+  public applyDelta(userId: string, message: Message): { version: number; delta: Delta } | null {
     const user = this.users.get(userId);
 
     if (!user) {
       throw new Error("INVALID USER ID");
     }
     
-    //normalize the incoming delta
-    const delta = normalizeDelta({ops: message.ops});
-    
-    //transform against any operations that happened after user's base version
-    const transformed = this.transformDelta(delta, message.baseVersion, this.version);
-    
-    if (!transformed) {
-      console.error('Transformation failed');
-      return null;
+    if(!this.content[message.stickyId]){
+      throw new Error("INVALID STICKY ID");
     }
-    
-    //console.log('Transformed delta:', transformed);
-    
-    this.content = apply(this.content, transformed);
 
-    this.version++;
+    if (message.type === 'delta') {
+      const baseContent = !this.content[message.stickyId] ? '' : this.content[message.stickyId].text;
+
+      //normalize the incoming delta
+      const delta = normalizeDelta({ops: message.ops});
     
-    this.deltaHistory.push({
-      delta: transformed,
-      version: this.version,
-      author: userId,
-      timestamp: Date.now()
-    });
+      //transform against any operations that happened after user's base version
+      const transformed = this.transformDelta(delta, message.baseVersion, this.version);
     
-    user.version = this.version;
+      if (!transformed) {
+        console.error('Transformation failed');
+        return null;
+      }
     
-    this.broadcastDelta(transformed, this.version, userId);
+      //console.log('Transformed delta:', transformed);
     
-    //trim history if needed
-    if (this.deltaHistory.length > this.maxHistorySize) {
-      this.trimHistory();
+      this.content[message.stickyId].editText(apply(baseContent, transformed));
+ 
+
+      this.version++;
+    
+      this.deltaHistory.push({
+        delta: transformed,
+        version: this.version,
+        author: userId,
+        timestamp: Date.now()
+      });
+    
+      user.version = this.version;
+    
+      this.broadcastDelta(transformed, this.version, userId);
+    
+      //trim history if needed
+      if (this.deltaHistory.length > this.maxHistorySize) {
+        this.trimHistory();
+      }
+    
+      return {version: this.version, delta: transformed};
+    } else {
+
+      throw new Error("INVALID MESSAGE TYPE");
     }
-    
-    return {version: this.version, delta: transformed};
   }
 
   //transform a delta against operations in history
@@ -164,11 +203,13 @@ export class DocumentSession {
   }
 
   //this will send a cursor of a user to the rest of the users
-  public updateCursor(userId: string, cursor: { line: number; ch: number }): void {
+  public updateCursor(userId: string, cursor: { x: number; y: number }): void {
     const user = this.users.get(userId);
     
     if (!user) {
       throw new Error("INVALID USERID, USERID NOT FOUND");
+    } else {
+      console.log('UPDATE')
     }
     
     user.cursor = cursor;
@@ -207,6 +248,7 @@ export class DocumentSession {
     for (const [userId, user] of this.users) {
       if (userId !== excludeUserId) {
         user.connection.send(message);
+        console.log(userId + " sent message: " + JSON.stringify(message));
       }
     }
   }
@@ -224,7 +266,7 @@ export class DocumentSession {
       documentId: this.documentId,
       version: this.version,
       userCount: this.users.size,
-      contentLength: this.content.length,
+      contentLength: this.content.size,
       users: Array.from(this.users.values()).map(u => ({
         userId: u.userId,
         version: u.version,
@@ -235,7 +277,7 @@ export class DocumentSession {
   }
 
   //returns content
-  public getContent(): string {
+  public getContent(): Record<string, stickyNote> {
     return this.content;
   }
 

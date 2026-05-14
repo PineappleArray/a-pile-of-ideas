@@ -3,19 +3,29 @@
     "bson": "^7.2.0",
     "diff": "^8.0.3",
     "ioredis": "^5.9.3",
+    "lodash": "^4.17.23",
+    "lucide-react": "^0.575.0",
     "mongodb": "^7.1.0",
     "pako": "^2.1.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "ws": "^8.19.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
+    "@types/lodash": "^4.17.24",
     "@types/pako": "^2.0.4",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@types/ws": "^8.18.1",
+    "@vitejs/plugin-react": "^5.1.4",
     "jest": "^30.2.0",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "tsd": "^0.33.0",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
   }
 }

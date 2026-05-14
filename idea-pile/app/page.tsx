@@ -5,11 +5,6 @@ import WhiteboardPage from './whiteboard-page';
 export default function LandingPage() {
   const features = [
     {
-      icon: PenTool,
-      title: 'Digital Whiteboard', 
-      description: 'Sketch, draw, and visualize your ideas with our intuitive whiteboard and drawing tools.'
-    },
-    {
       icon: Users,
       title: 'Team Collaboration',
       description: 'Work together seamlessly with your team members in shared workspaces and projects.'

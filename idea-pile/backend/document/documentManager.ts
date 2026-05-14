@@ -16,6 +16,7 @@ import { SnapshotStore } from '../storage/snapshotStore';
 import { start } from 'repl';
 import { Delta, DeltaMessage } from '../../delta/delta'
 import { Session } from 'inspector/promises';
+import stickyNote from '@/shared/notes';
 
 export interface DocumentManagerConfig {
   operationStore?: OperationStore;
@@ -51,12 +52,12 @@ export class DocumentManager {
   }
 
   //get or create a document session
-  public async getOrCreateSession(documentId: string, initialContent?: string): Promise<DocumentSession> {
+  public async getOrCreateSession(documentId: string, initialContent?: Record<string,stickyNote>): Promise<DocumentSession> {
     if(this.sessions.has(documentId)){
       //console.log("HAS DOCUMENT")
       return this.sessions.get(documentId)!;
     } else {
-      let content = initialContent || '';
+      let content = initialContent || {};
       if(this.config.snapshotStore && !initialContent) {
           const snap = await this.config.snapshotStore.load(documentId);
           if(snap){
@@ -66,17 +67,19 @@ export class DocumentManager {
       }
       const session = new DocumentSession(documentId, content);
       this.sessions.set(documentId, session);
+      console.log(this.sessions);
       return session;
     }
   }
 
   //joins a user to a document session, connection point for users
-  public async joinSession(documentId: string, userId: string, connection: IClientConnection, initialContent?: string): Promise<DocumentSession> {
+  public async joinSession(documentId: string, userId: string, connection: IClientConnection, initialContent?: Record<string, stickyNote>): Promise<DocumentSession> {
     await this.leaveSession(userId);
     const session = await this.getOrCreateSession(documentId, initialContent);
     session.addUser(userId, connection);
     this.userToDocument.set(userId, documentId);
-  return session;
+    console.log(`${this.userToDocument.size} users in ${this.sessions.size} sessions`);
+    return session;
   }
 
   //removes a user from the session and saves a snapshot if no users are left
@@ -116,10 +119,18 @@ public async handleOperation(userId: string, message: DeltaMessage): Promise<{ v
 }
 
   //update a user's cursor position
-  public updateCursor(userId: string, cursor: { line: number; ch: number }): void {
+  public updateCursor(userId: string, cursor: { x: number; y: number }): void {
     const docId = this.userToDocument.get(userId);
+    console.log(`Updating cursor for user ${userId} in document ${docId} to position (${cursor.x}, ${cursor.y})`);
     if(docId){
-        this.getSession(docId)?.updateCursor(userId, cursor);
+      this.getSession(docId)?.updateCursor(userId, cursor);
+    }
+  }
+
+  public createStickyNote(userId: string, noteId: string, x: number, y: number, docId: string): void {
+    console.log(`Creating sticky note ${noteId} for user ${userId} in document ${docId} at position (${x}, ${y})`);
+    if(docId){
+      this.getSession(docId)?.createSticky(userId,  x, y, noteId);
     }
   }
 
